@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inwentaryzacja Magazynu - V9 (v2b - naprawa funkcji)</title>
+    <title>Inwentaryzacja Magazynu - V10 (v3 - długie teksty + przegląd lokalizacji)</title>
     
     <!-- PWA Meta Tags for Mobile Install -->
     <meta name="theme-color" content="#3b82f6">
@@ -89,7 +89,7 @@
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">
                 <i class="fas fa-boxes mr-2 text-blue-600"></i>
-                Inwentaryzacja Magazynu - V9
+                Inwentaryzacja Magazynu - V10
             </h1>
             <p class="text-gray-600">System zarządzania zapasami z DeepSeek AI + Zarządzanie lokalizacjami</p>
         </div>
@@ -109,11 +109,14 @@
                 <button id="locationsBtn" class="bg-orange-600 text-white p-4 rounded-lg hover:bg-orange-700 transition-colors">
                     <i class="fas fa-map-marker-alt mr-2"></i>Zarządzaj lokalizacjami
                 </button>
+                <button id="browseLocationBtn" class="bg-teal-600 text-white p-4 rounded-lg hover:bg-teal-700 transition-colors">
+                    <i class="fas fa-eye mr-2"></i>Przeglądaj lokalizację
+                </button>
                 <button id="debugBtn" class="bg-gray-600 text-white p-4 rounded-lg hover:bg-gray-700 transition-colors">
                     <i class="fas fa-bug mr-2"></i>Debug Info
                 </button>
                 <button id="clearBtn" class="bg-red-600 text-white p-4 rounded-lg hover:bg-red-700 transition-colors">
-                    <i class="fas fa-trash mr-2"></i>Wyczyść V9
+                    <i class="fas fa-trash mr-2"></i>Wyczyść V10
                 </button>
             </div>
         </div>
@@ -158,7 +161,7 @@
 
         <!-- Debug Info -->
         <div id="debugSection" class="bg-white rounded-lg shadow-lg p-6 mb-6" style="display: none;">
-            <h3 class="text-lg font-semibold mb-4">Debug Information - V9</h3>
+            <h3 class="text-lg font-semibold mb-4">Debug Information - V10</h3>
             <div id="debugInfo" class="debug-info">Brak informacji debugowych</div>
         </div>
 
@@ -224,7 +227,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-microphone mr-2"></i>Dodawanie głosowe - V9 (PWA)
+                    <i class="fas fa-microphone mr-2"></i>Dodawanie głosowe - V10 (PWA)
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -286,7 +289,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-map-marker-alt mr-2"></i>Zarządzanie lokalizacjami - V9
+                    <i class="fas fa-map-marker-alt mr-2"></i>Zarządzanie lokalizacjami - V10
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -315,12 +318,61 @@
         </div>
     </div>
 
+    <!-- Browse Location Modal -->
+    <div id="browseLocationModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold">
+                    <i class="fas fa-eye mr-2"></i>Przegląd przedmiotów w lokalizacji - V10
+                </h3>
+                <span class="close">&times;</span>
+            </div>
+
+            <div class="mb-6">
+                <h4 class="font-semibold mb-3">Wybierz lokalizację do przeglądu:</h4>
+                <select id="browseLocationSelect" class="w-full p-3 border border-gray-300 rounded-lg">
+                    <option value="">Wybierz lokalizację...</option>
+                </select>
+                <p class="text-sm text-gray-500 mt-2">Wybierz lokalizację, aby zobaczyć wszystkie przedmioty w niej znajdujące się</p>
+            </div>
+
+            <div id="browseLocationResults" class="mb-6" style="display: none;">
+                <h4 class="font-semibold mb-3">Przedmioty w lokalizacji: <span id="browseLocationName" class="text-blue-600"></span></h4>
+                <div class="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-2 text-left">Przedmiot</th>
+                                <th class="p-2 text-left">Ilość</th>
+                                <th class="p-2 text-left">Cena</th>
+                                <th class="p-2 text-left">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="browseLocationItems">
+                            <!-- Items will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-sm text-gray-600">
+                    <p><strong>Podsumowanie:</strong> <span id="browseLocationSummary">0 przedmiotów, wartość 0 PLN</span></p>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button id="closeBrowseLocationModal" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Zamknij</button>
+                <button id="refreshBrowseLocation" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-sync-alt mr-2"></i>Odśwież
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Import Modal -->
     <div id="importModal" class="modal">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-upload mr-2"></i>Import CSV - V9
+                    <i class="fas fa-upload mr-2"></i>Import CSV - V10
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -456,9 +508,9 @@
         const DEEPSEEK_API_KEY = 'sk-63131981686c41399c7b43007a913de0';
         const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
-        // V9 Storage keys - separate from previous versions
-        const STORAGE_KEY = 'inventoryData_v9_andy';
-        const LOCATIONS_KEY = 'locations_v9_andy';
+        // V10 Storage keys - separate from previous versions
+        const STORAGE_KEY = 'inventoryData_v10_andy';
+        const LOCATIONS_KEY = 'locations_v10_andy';
 
         // PWA Install functionality
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -535,7 +587,7 @@
 
         class InventoryApp {
             constructor() {
-                console.log('🚀 Inwentaryzacja Magazynu V9 - v2b (naprawa funkcji)');
+                console.log('🚀 Inwentaryzacja Magazynu V10 - v3 (długie teksty + przegląd lokalizacji)');
                 this.init();
             }
 
@@ -547,7 +599,7 @@
                 this.updateStats();
                 this.loadFilterOptions();
                 this.showDebugInfo();
-                console.log('✅ Aplikacja V9 zainicjalizowana');
+                console.log('✅ Aplikacja V10 zainicjalizowana');
             }
 
             setupEventListeners() {
@@ -556,6 +608,7 @@
                 document.getElementById('importBtn').addEventListener('click', () => this.showImportModal());
                 document.getElementById('exportBtn').addEventListener('click', () => this.exportCSV());
                 document.getElementById('locationsBtn').addEventListener('click', () => this.showLocationsModal());
+                document.getElementById('browseLocationBtn').addEventListener('click', () => this.showBrowseLocationModal());
                 document.getElementById('searchBtn').addEventListener('click', () => this.performSearch());
                 document.getElementById('clearSearchBtn').addEventListener('click', () => this.clearSearch());
                 document.getElementById('debugBtn').addEventListener('click', () => this.toggleDebugInfo());
@@ -593,6 +646,16 @@
                 document.getElementById('csvFileInput').addEventListener('change', () => this.previewCSV());
                 document.getElementById('processImport').addEventListener('click', () => this.processCSVImport());
                 document.getElementById('cancelImport').addEventListener('click', () => this.closeImportModal());
+
+                // Browse Location Modal
+                document.getElementById('closeBrowseLocationModal').addEventListener('click', () => this.closeBrowseLocationModal());
+                document.getElementById('refreshBrowseLocation').addEventListener('click', () => {
+                    const location = document.getElementById('browseLocationSelect').value;
+                    if (location) {
+                        this.displayLocationItems(location);
+                    }
+                });
+                document.getElementById('browseLocationSelect').addEventListener('change', () => this.browseLocationSelected());
 
                 // Close modals
                 document.querySelectorAll('.close').forEach(closeBtn => {
@@ -686,6 +749,97 @@
                 `).join('');
             }
 
+            // Browse Location Methods
+            showBrowseLocationModal() {
+                this.loadBrowseLocationOptions();
+                document.getElementById('browseLocationModal').style.display = 'block';
+                document.getElementById('browseLocationResults').style.display = 'none';
+            }
+
+            closeBrowseLocationModal() {
+                document.getElementById('browseLocationModal').style.display = 'none';
+                document.getElementById('browseLocationSelect').value = '';
+            }
+
+            loadBrowseLocationOptions() {
+                const select = document.getElementById('browseLocationSelect');
+                select.innerHTML = '<option value="">Wybierz lokalizację...</option>';
+                
+                locations.forEach(location => {
+                    const itemCount = currentData.filter(item => item.Lokalizacja === location && item.Status === 'aktywny').length;
+                    select.innerHTML += `<option value="${location}">${location} (${itemCount} przedmiotów)</option>`;
+                });
+                
+                // Jeśli brak lokalizacji, dodaj informację
+                if (locations.length === 0) {
+                    select.innerHTML += '<option value="" disabled>Brak zdefiniowanych lokalizacji</option>';
+                }
+                
+                // Dodaj event listener dla zmiany wyboru
+                select.onchange = () => this.browseLocationSelected();
+            }
+
+            browseLocationSelected() {
+                const location = document.getElementById('browseLocationSelect').value;
+                if (!location) {
+                    document.getElementById('browseLocationResults').style.display = 'none';
+                    return;
+                }
+                
+                this.displayLocationItems(location);
+            }
+
+            displayLocationItems(location) {
+                const items = currentData.filter(item =>
+                    item.Lokalizacja === location && item.Status === 'aktywny'
+                );
+                
+                console.log(`📍 Przedmioty w lokalizacji "${location}": ${items.length} znalezionych`);
+                
+                const itemsContainer = document.getElementById('browseLocationItems');
+                const locationName = document.getElementById('browseLocationName');
+                const summary = document.getElementById('browseLocationSummary');
+                
+                locationName.textContent = location;
+                
+                if (items.length === 0) {
+                    itemsContainer.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center p-4 text-gray-500">
+                                <i class="fas fa-box-open text-2xl mb-2"></i>
+                                <p>Brak przedmiotów w tej lokalizacji</p>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    itemsContainer.innerHTML = items.map(item => `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-2 border-b">
+                                <div class="font-medium">${item.Przedmiot || '-'}</div>
+                                <div class="text-xs text-gray-500">${item.Producent || ''} ${item.Numer_katalogowy ? '| ' + item.Numer_katalogowy : ''}</div>
+                            </td>
+                            <td class="p-2 border-b text-center">${item.Ilosc || 0} ${item.Jednostka || 'szt'}</td>
+                            <td class="p-2 border-b text-right">${this.formatCurrency(item.Cena_PLN)}</td>
+                            <td class="p-2 border-b">
+                                <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-600">${item.Status || 'aktywny'}</span>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+                
+                // Oblicz podsumowanie
+                const totalItems = items.length;
+                const totalValue = items.reduce((sum, item) => {
+                    const price = parseFloat(item.Cena_PLN) || 0;
+                    const quantity = parseInt(item.Ilosc) || 0;
+                    return sum + (price * quantity);
+                }, 0);
+                
+                summary.textContent = `${totalItems} przedmiotów, wartość ${totalValue.toFixed(2)} PLN`;
+                
+                document.getElementById('browseLocationResults').style.display = 'block';
+            }
+
             loadFilterOptions() {
                 // Load locations for filters
                 const filterLocation = document.getElementById('filterLocation');
@@ -701,13 +855,23 @@
                     voiceLocation.innerHTML += `<option value="${location}">${location}</option>`;
                 });
 
+                // Load locations for browse modal
+                const browseLocation = document.getElementById('browseLocationSelect');
+                if (browseLocation) {
+                    browseLocation.innerHTML = '<option value="">Wybierz lokalizację...</option>';
+                    locations.forEach(location => {
+                        const itemCount = currentData.filter(item => item.Lokalizacja === location && item.Status === 'aktywny').length;
+                        browseLocation.innerHTML += `<option value="${location}">${location} (${itemCount} przedmiotów)</option>`;
+                    });
+                }
+
                 // Add fallback location if none exist
                 if (locations.length === 0) {
                     const fallbackLocation = 'Sklep - Regał główny';
                     voiceLocation.innerHTML += `<option value="${fallbackLocation}">${fallbackLocation}</option>`;
                 }
 
-                // Load categories for filters  
+                // Load categories for filters
                 const filterCategory = document.getElementById('filterCategory');
                 const categories = [...new Set(currentData.map(item => item.Kategoria))].filter(Boolean);
                 filterCategory.innerHTML = '<option value="">Wszystkie kategorie</option>';
@@ -779,7 +943,7 @@
                             <td colspan="9" class="text-center p-8">
                                 <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
                                 <p class="text-gray-500">${isSearchActive ? 'Nie znaleziono wyników wyszukiwania.' : 'Brak danych. Kliknij "Import CSV" aby wczytać bazę danych.'}</p>
-                                <p class="text-sm text-gray-400 mt-2">Wersja V9 - PWA z zarządzaniem lokalizacjami</p>
+                                <p class="text-sm text-gray-400 mt-2">Wersja V10 - PWA z zarządzaniem lokalizacjami</p>
                             </td>
                         </tr>
                     `;
@@ -852,7 +1016,7 @@
                     stats.totalValue += price * quantity;
                 });
 
-                console.log(`📊 V9 Stats Update:`, stats);
+                console.log(`📊 V10 Stats Update:`, stats);
 
                 // Update UI
                 document.getElementById('totalItems').textContent = stats.total;
@@ -863,7 +1027,7 @@
 
             showDebugInfo() {
                 const debugInfo = {
-                    version: 'V9',
+                    version: 'V10',
                     storageKey: STORAGE_KEY,
                     locationsKey: LOCATIONS_KEY,
                     dataCount: currentData.length,
@@ -899,7 +1063,7 @@
             }
 
             clearAllData() {
-                if (!confirm('Czy na pewno chcesz wyczyścić WSZYSTKIE dane V9 (przedmioty + lokalizacje)? Ta operacja jest nieodwracalna!')) {
+                if (!confirm('Czy na pewno chcesz wyczyścić WSZYSTKIE dane V10 (przedmioty + lokalizacje)? Ta operacja jest nieodwracalna!')) {
                     return;
                 }
 
@@ -914,7 +1078,7 @@
                 this.loadFilterOptions();
                 this.showDebugInfo();
                 this.clearSearch();
-                this.showSuccess('Wszystkie dane V9 zostały wyczyszczone');
+                this.showSuccess('Wszystkie dane V10 zostały wyczyszczone');
             }
 
             performSearch() {
@@ -924,7 +1088,7 @@
                     return;
                 }
 
-                console.log(`🔍 V9 Search: "${query}" in ${currentData.length} items`);
+                console.log(`🔍 V10 Search: "${query}" in ${currentData.length} items`);
 
                 filteredData = currentData.filter(item => {
                     const matches = (item.Przedmiot && item.Przedmiot.toLowerCase().includes(query)) ||
@@ -952,7 +1116,7 @@
                 document.getElementById('clearSearchBtn').style.display = 'inline-block';
 
                 this.displayInventoryTable();
-                console.log(`🎯 V9 Search results: ${filteredData.length} found`);
+                console.log(`🎯 V10 Search results: ${filteredData.length} found`);
 
                 if (filteredData.length === 0) {
                     this.showError(`Nie znaleziono wyników dla: "${query}"`);
@@ -972,7 +1136,7 @@
                 currentPage = 1;
                 
                 this.displayInventoryTable();
-                console.log('🔄 V9 Search cleared');
+                console.log('🔄 V10 Search cleared');
             }
 
             handleSearchInput(e) {
@@ -1060,16 +1224,114 @@
                     return;
                 }
 
+                // Ukryj przycisk przetwarzania i pokaż progress
+                document.getElementById('processVoice').disabled = true;
                 document.getElementById('processingMessage').style.display = 'block';
+                document.getElementById('processingMessage').innerHTML =
+                    '<i class="fas fa-spinner fa-spin mr-2"></i>Przygotowywanie przetwarzania...';
 
                 try {
-                    const aiResponse = await this.callDeepSeekAPI(text);
-                    this.displayAIResults(aiResponse, location);
+                    let allResults = [];
+                    
+                    // Jeśli tekst jest bardzo długi (powyżej 3000 znaków), podziel na części
+                    if (text.length > 3000) {
+                        const parts = this.splitLongText(text);
+                        const totalParts = parts.length;
+                        
+                        document.getElementById('processingMessage').innerHTML =
+                            `<i class="fas fa-spinner fa-spin mr-2"></i>Przetwarzanie części 1/${totalParts}...`;
+                        
+                        for (let i = 0; i < parts.length; i++) {
+                            const part = parts[i];
+                            
+                            // Aktualizuj status przetwarzania
+                            document.getElementById('processingMessage').innerHTML =
+                                `<i class="fas fa-spinner fa-spin mr-2"></i>Przetwarzanie części ${i + 1}/${totalParts} (${part.length} znaków)...`;
+                            
+                            console.log(`🔍 Przetwarzanie części ${i + 1}/${totalParts}, znaków: ${part.length}`);
+                            
+                            try {
+                                const aiResponse = await this.callDeepSeekAPI(part);
+                                if (Array.isArray(aiResponse)) {
+                                    allResults = allResults.concat(aiResponse);
+                                    console.log(`✅ Część ${i + 1} przetworzona pomyślnie, znaleziono ${aiResponse.length} przedmiotów`);
+                                }
+                            } catch (error) {
+                                console.error(`❌ Błąd w części ${i + 1}:`, error);
+                                this.showError(`Błąd w części ${i + 1}: ${error.message}. Kontynuowanie przetwarzania...`);
+                            }
+                            
+                            // Małe opóźnienie między requestami aby uniknąć rate limiting
+                            if (i < parts.length - 1) {
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                            }
+                        }
+                    } else {
+                        // Normalne przetwarzanie dla krótkich tekstów
+                        const aiResponse = await this.callDeepSeekAPI(text);
+                        if (Array.isArray(aiResponse)) {
+                            allResults = aiResponse;
+                        }
+                    }
+                    
+                    if (allResults.length === 0) {
+                        this.showError('AI nie rozpoznało żadnych przedmiotów w tekście');
+                        return;
+                    }
+                    
+                    this.displayAIResults(allResults, location);
+                    
                 } catch (error) {
                     this.showError('Błąd przetwarzania AI: ' + error.message);
                 } finally {
+                    document.getElementById('processVoice').disabled = false;
                     document.getElementById('processingMessage').style.display = 'none';
                 }
+            }
+
+            // Split long text into manageable parts for AI processing
+            splitLongText(text, maxLength = 2500) {
+                console.log(`✂️ Dzielenie długiego tekstu (${text.length} znaków) na części po ${maxLength} znaków`);
+                
+                const parts = [];
+                let currentPart = '';
+                const lines = text.split('\n');
+                
+                for (const line of lines) {
+                    // Jeśli dodanie tej linii przekroczy maxLength, zapisz obecną część i zacznij nową
+                    if (currentPart.length + line.length + 1 > maxLength && currentPart.length > 0) {
+                        parts.push(currentPart.trim());
+                        currentPart = line;
+                    } else {
+                        // Dodaj linię do obecnej części
+                        if (currentPart.length > 0) {
+                            currentPart += '\n' + line;
+                        } else {
+                            currentPart = line;
+                        }
+                    }
+                }
+                
+                // Dodaj ostatnią część jeśli nie jest pusta
+                if (currentPart.trim().length > 0) {
+                    parts.push(currentPart.trim());
+                }
+                
+                // Jeśli po podziale na linie nadal mamy za długie części, dzielimy na siłę
+                const finalParts = [];
+                for (const part of parts) {
+                    if (part.length <= maxLength) {
+                        finalParts.push(part);
+                    } else {
+                        // Dziel na mniejsze kawałki
+                        for (let i = 0; i < part.length; i += maxLength) {
+                            finalParts.push(part.substring(i, i + maxLength));
+                        }
+                    }
+                }
+                
+                console.log(`✅ Podzielono na ${finalParts.length} części`);
+                return finalParts;
             }
 
             // ENHANCED AI PROMPT - V9 keeps all V8 improvements
@@ -1287,7 +1549,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
 
                 reader.onload = (e) => {
                     try {
-                        console.log('🔄 V9 CSV Import rozpoczęty');
+                        console.log('🔄 V10 CSV Import rozpoczęty');
                         const csv = e.target.result;
                         const lines = csv.split('\n').filter(line => line.trim());
                         
@@ -1460,7 +1722,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 link.click();
                 document.body.removeChild(link);
                 
-                this.showSuccess('Plik CSV V9 został pobrany');
+                this.showSuccess('Plik CSV V10 został pobrany');
             }
 
             editField(id, field) {
@@ -1522,7 +1784,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                     currentData = JSON.parse(data);
                     console.log(`📂 Załadowano ${currentData.length} przedmiotów z localStorage (${STORAGE_KEY})`);
                 } else {
-                    console.log('📂 Brak danych w localStorage dla V9');
+                    console.log('📂 Brak danych w localStorage dla V10');
                 }
             }
 
@@ -1553,10 +1815,10 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
             }
         }
 
-        // Initialize app - V9 z systemem logowania
+        // Initialize app - V10 z systemem logowania
         let app;
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Inicjalizacja Inwentaryzacji Magazynu V9 - v2b (naprawa funkcji)');
+            console.log('🚀 Inicjalizacja Inwentaryzacji Magazynu V10 - v3 (długie teksty + przegląd lokalizacji)');
             
             // Sprawdź logowanie na początku - jeśli nie zalogowany, pokaże formularz
             checkLogin();
