@@ -64,6 +64,38 @@
             .install-prompt { display: none; } /* Hide install prompt when running as PWA */
         }
     </style>
+
+    <!-- Firebase SDK v10 (modular) - synchronizacja danych -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+      import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp }
+        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAmaoBLYkvdy27UfoRSMeFVs11Cjtk6UPo",
+        authDomain: "moje-aplikacje-87790.firebaseapp.com",
+        projectId: "moje-aplikacje-87790",
+        storageBucket: "moje-aplikacje-87790.firebasestorage.app",
+        messagingSenderId: "232192461701",
+        appId: "1:232192461701:web:733fec66599ab64ded92ec"
+      };
+
+      const fbApp = initializeApp(firebaseConfig);
+      const db = getFirestore(fbApp);
+
+      const USER_DOC = 'andy';
+
+      window._firestore = db;
+      window._fbInvDoc     = doc(db, 'inwentarz_data', USER_DOC);
+      window._fbInvLocDoc  = doc(db, 'inwentarz_locations', USER_DOC);
+      window._fbServerTimestamp = serverTimestamp;
+      window._fbSetDoc  = setDoc;
+      window._fbGetDoc  = getDoc;
+      window._fbOnSnapshot = onSnapshot;
+      window._firebaseReady = true;
+
+      console.log('[Firebase] Inwentaryzacja SDK załadowany ✓');
+    </script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <!-- Install Prompt for Mobile -->
@@ -585,6 +617,134 @@
             });
         }
 
+
+        // =================== FIREBASE SYNC - INWENTARYZACJA ===================
+        let _fbInvSyncTimeout = null;
+        let _fbInvListenerActive = false;
+
+        // Zapisz dane inwentarza do Firebase (debounce 2s)
+        function fbSaveInventory() {
+            if (!window._firebaseReady || !window._fbInvDoc) return;
+            if (_fbInvSyncTimeout) clearTimeout(_fbInvSyncTimeout);
+            _fbInvSyncTimeout = setTimeout(async function() {
+                try {
+                    await window._fbSetDoc(window._fbInvDoc, {
+                        items: currentData || [],
+                        updatedAt: window._fbServerTimestamp()
+                    });
+                    console.log('[Firebase] Inwentarz zsynchronizowany ✓');
+                    fbShowStatus('✓ Zsynchronizowano', '#28a745');
+                } catch(e) {
+                    console.error('[Firebase] Błąd zapisu inwentarza:', e);
+                    fbShowStatus('⚠ Błąd sync', '#dc3545');
+                }
+            }, 2000);
+        }
+
+        // Zapisz lokalizacje do Firebase
+        async function fbSaveLocations() {
+            if (!window._firebaseReady || !window._fbInvLocDoc) return;
+            try {
+                await window._fbSetDoc(window._fbInvLocDoc, {
+                    locations: locations || [],
+                    updatedAt: window._fbServerTimestamp()
+                });
+                console.log('[Firebase] Lokalizacje zsynchronizowane ✓');
+            } catch(e) {
+                console.error('[Firebase] Błąd zapisu lokalizacji:', e);
+            }
+        }
+
+        // Wczytaj dane z Firebase przy starcie
+        async function fbLoadInventory() {
+            if (!window._firebaseReady || !window._fbInvDoc) return;
+            try {
+                fbShowStatus('⟳ Ładowanie z chmury...', '#007bff');
+
+                // Wczytaj przedmioty
+                const snap = await window._fbGetDoc(window._fbInvDoc);
+                if (snap.exists() && snap.data().items && snap.data().items.length > 0) {
+                    currentData = snap.data().items;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+                    console.log('[Firebase] Wczytano ' + currentData.length + ' przedmiotów z chmury ✓');
+                    fbShowStatus('✓ Dane z chmury (' + currentData.length + ' poz.)', '#28a745');
+                } else {
+                    // Brak w Firebase - wyślij lokalne
+                    const local = localStorage.getItem(STORAGE_KEY);
+                    if (local) {
+                        currentData = JSON.parse(local);
+                        fbSaveInventory();
+                        console.log('[Firebase] Brak w chmurze, wysyłam lokalne...');
+                    }
+                    fbShowStatus('☁ Inicjalizacja chmury...', '#ffc107');
+                }
+
+                // Wczytaj lokalizacje
+                const locSnap = await window._fbGetDoc(window._fbInvLocDoc);
+                if (locSnap.exists() && locSnap.data().locations) {
+                    locations = locSnap.data().locations;
+                    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
+                    console.log('[Firebase] Wczytano ' + locations.length + ' lokalizacji z chmury ✓');
+                } else {
+                    const localLoc = localStorage.getItem(LOCATIONS_KEY);
+                    if (localLoc) {
+                        locations = JSON.parse(localLoc);
+                        fbSaveLocations();
+                    }
+                }
+
+            } catch(e) {
+                console.error('[Firebase] Błąd wczytywania:', e);
+                fbShowStatus('⚠ Offline (lokalne dane)', '#ffc107');
+                // Fallback do localStorage
+                const local = localStorage.getItem(STORAGE_KEY);
+                if (local) currentData = JSON.parse(local);
+                const localLoc = localStorage.getItem(LOCATIONS_KEY);
+                if (localLoc) locations = JSON.parse(localLoc);
+            }
+        }
+
+        // Nasłuch na zmiany z innych urządzeń
+        function fbStartListener() {
+            if (_fbInvListenerActive || !window._firebaseReady) return;
+            _fbInvListenerActive = true;
+            let firstCall = true;
+            window._fbOnSnapshot(window._fbInvDoc, function(snap) {
+                if (firstCall) { firstCall = false; return; }
+                if (!snap.exists() || !snap.data().items) return;
+                currentData = snap.data().items;
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+                console.log('[Firebase] Dane zaktualizowane z innego urządzenia ✓');
+                fbShowStatus('↓ Zaktualizowano z chmury', '#17a2b8');
+                // Odśwież UI
+                if (window._appInstance) {
+                    try {
+                        window._appInstance.displayInventoryTable();
+                        window._appInstance.updateStats();
+                        window._appInstance.loadFilterOptions();
+                    } catch(e) {}
+                }
+            });
+        }
+
+        // Wskaźnik statusu Firebase
+        function fbShowStatus(msg, color) {
+            let el = document.getElementById('_fbInvStatus');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = '_fbInvStatus';
+                el.style.cssText = 'position:fixed;bottom:10px;right:10px;padding:6px 12px;border-radius:4px;' +
+                    'font-size:12px;color:white;z-index:9999;transition:opacity 0.5s;pointer-events:none;';
+                document.body.appendChild(el);
+            }
+            el.style.background = color;
+            el.style.opacity = '1';
+            el.textContent = '☁ ' + msg;
+            clearTimeout(el._hideTimer);
+            el._hideTimer = setTimeout(function() { el.style.opacity = '0'; }, 4000);
+        }
+        // =================== KONIEC FIREBASE SYNC ===================
+
         class InventoryApp {
             constructor() {
                 console.log('🚀 Inwentaryzacja Magazynu V10 - v3 (długie teksty + przegląd lokalizacji)');
@@ -593,13 +753,20 @@
 
             init() {
                 this.setupEventListeners();
-                this.loadFromLocalStorage();
-                this.loadLocationsFromStorage();
-                this.displayInventoryTable();
-                this.updateStats();
-                this.loadFilterOptions();
-                this.showDebugInfo();
-                console.log('✅ Aplikacja V10 zainicjalizowana');
+                window._appInstance = this;
+                const self = this;
+                // Najpierw wczytaj z Firebase, potem zainicjalizuj UI
+                (async function() {
+                    self.loadFromLocalStorage();
+                    self.loadLocationsFromStorage();
+                    await fbLoadInventory();
+                    self.displayInventoryTable();
+                    self.updateStats();
+                    self.loadFilterOptions();
+                    self.showDebugInfo();
+                    fbStartListener();
+                    console.log('✅ Aplikacja V10 zainicjalizowana z Firebase sync');
+                })();
             }
 
             setupEventListeners() {
@@ -883,6 +1050,8 @@
             saveLocationsToStorage() {
                 localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
                 console.log(`💾 Zapisano ${locations.length} lokalizacji do localStorage`);
+                // Firebase sync
+                try { fbSaveLocations(); } catch(e) {}
             }
 
             loadLocationsFromStorage() {
@@ -1776,6 +1945,8 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
             saveToLocalStorage() {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
                 console.log(`💾 Zapisano ${currentData.length} przedmiotów do localStorage (${STORAGE_KEY})`);
+                // Firebase sync (debounce 2s)
+                try { fbSaveInventory(); } catch(e) {}
             }
 
             loadFromLocalStorage() {
