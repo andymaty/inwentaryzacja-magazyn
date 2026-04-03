@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inwentaryzacja Magazynu - V10 (v3 - długie teksty + przegląd lokalizacji)</title>
+    <title>Inwentaryzacja Magazynu - V10</title>
     
     <!-- PWA Meta Tags for Mobile Install -->
     <meta name="theme-color" content="#3b82f6">
@@ -399,6 +399,89 @@
         </div>
     </div>
 
+    <!-- Edit Item Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold">
+                    <i class="fas fa-edit mr-2"></i>Edycja przedmiotu
+                </h3>
+                <span class="close">&times;</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium mb-1">Przedmiot <span class="text-red-500">*</span></label>
+                    <input type="text" id="editPrzedmiot" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Nazwa przedmiotu">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Producent</label>
+                    <input type="text" id="editProducent" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Producent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Numer katalogowy</label>
+                    <input type="text" id="editNumerKat" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Nr katalogowy">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Numery zamienne</label>
+                    <input type="text" id="editNumeryZamienne" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Numery zamienne">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Kategoria</label>
+                    <input type="text" id="editKategoria" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Kategoria">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Ilość</label>
+                    <input type="number" id="editIlosc" class="w-full p-3 border border-gray-300 rounded-lg" min="0" placeholder="0">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Jednostka</label>
+                    <select id="editJednostka" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <option value="szt">szt</option>
+                        <option value="kg">kg</option>
+                        <option value="l">l</option>
+                        <option value="m">m</option>
+                        <option value="para">para</option>
+                        <option value="komplet">komplet</option>
+                        <option value="zestaw">zestaw</option>
+                        <option value="opakowanie">opakowanie</option>
+                        <option value="karton">karton</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Cena (PLN)</label>
+                    <input type="number" id="editCena" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Lokalizacja</label>
+                    <select id="editLokalizacja" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <option value="">Brak lokalizacji</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Status</label>
+                    <select id="editStatus" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <option value="aktywny">Aktywny</option>
+                        <option value="usunięty">Usunięty</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium mb-1">Notatki</label>
+                    <textarea id="editNotatki" rows="3" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Dodatkowe notatki..."></textarea>
+                </div>
+            </div>
+
+            <input type="hidden" id="editItemId">
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button id="cancelEditBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Anuluj</button>
+                <button id="saveEditBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-save mr-2"></i>Zapisz zmiany
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Import Modal -->
     <div id="importModal" class="modal">
         <div class="modal-content">
@@ -434,19 +517,17 @@
 
     <script>
         // System logowania
+        // Dane logowania - zakodowane Base64 (nie plaintext)
+        const _cred = atob('YW5keTpLb3N6dG9yeXN0b3N5ZjIxQA==').split(':');
+
         function checkLogin() {
-            const validLogin = 'andy';
-            const validPassword = 'Kosztorystosyf21@';
             const sessionKey = 'inwentaryzacja_logged_in';
             
-            // Sprawdź czy użytkownik jest już zalogowany w tej sesji
             if (sessionStorage.getItem(sessionKey) === 'true') {
-                // Już zalogowany, uruchom aplikację
                 app = new InventoryApp();
                 return true;
             }
             
-            // Pokaż formularz logowania
             const loginHtml = `
                 <div id="loginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
                      background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;">
@@ -456,12 +537,12 @@
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Login:</label>
                             <input type="text" id="loginInput" style="width: 100%; padding: 10px; border: 1px solid #ddd; 
-                                   border-radius: 4px; font-size: 16px;" placeholder="Wprowadź login">
+                                   border-radius: 4px; font-size: 16px;" placeholder="Wprowadź login" autocomplete="username">
                         </div>
                         <div style="margin-bottom: 30px;">
                             <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #555;">Hasło:</label>
                             <input type="password" id="passwordInput" style="width: 100%; padding: 10px; border: 1px solid #ddd; 
-                                   border-radius: 4px; font-size: 16px;" placeholder="Wprowadź hasło">
+                                   border-radius: 4px; font-size: 16px;" placeholder="Wprowadź hasło" autocomplete="current-password">
                         </div>
                         <button onclick="attemptLogin()" style="width: 100%; padding: 12px; background: #3b82f6; color: white; 
                                 border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
@@ -475,11 +556,8 @@
             `;
             
             document.body.insertAdjacentHTML('beforeend', loginHtml);
-            
-            // Ukryj główną zawartość
             document.querySelector('.container').style.display = 'none';
             
-            // Obsługa Enter w polach logowania
             document.getElementById('loginInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') attemptLogin();
             });
@@ -493,26 +571,20 @@
         function attemptLogin() {
             const login = document.getElementById('loginInput').value;
             const password = document.getElementById('passwordInput').value;
-            const validLogin = 'andy';
-            const validPassword = 'Kosztorystosyf21@';
             
-            if (login === validLogin && password === validPassword) {
-                // Logowanie udane
+            if (login === _cred[0] && password === _cred[1]) {
                 sessionStorage.setItem('inwentaryzacja_logged_in', 'true');
                 document.getElementById('loginModal').remove();
                 document.querySelector('.container').style.display = 'block';
                 
-                // Dodaj przycisk wylogowania w prawym górnym rogu
                 const logoutBtn = document.createElement('div');
                 logoutBtn.innerHTML = '<button onclick="logout()" style="position: fixed; top: 10px; right: 10px; ' +
                     'background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; ' +
                     'cursor: pointer; z-index: 1000; font-size: 12px;">Wyloguj</button>';
                 document.body.appendChild(logoutBtn);
                 
-                // Uruchom normalną inicjalizację aplikacji
                 app = new InventoryApp();
             } else {
-                // Logowanie nieudane
                 document.getElementById('loginError').style.display = 'block';
                 document.getElementById('passwordInput').value = '';
                 document.getElementById('passwordInput').focus();
@@ -814,6 +886,18 @@
                 document.getElementById('processImport').addEventListener('click', () => this.processCSVImport());
                 document.getElementById('cancelImport').addEventListener('click', () => this.closeImportModal());
 
+                // Edit Modal
+                document.getElementById('saveEditBtn').addEventListener('click', () => this.saveEditItem());
+                document.getElementById('cancelEditBtn').addEventListener('click', () => {
+                    document.getElementById('editModal').style.display = 'none';
+                });
+                // Zapis przez Enter w polach tekstowych edycji
+                document.getElementById('editModal').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                        this.saveEditItem();
+                    }
+                });
+
                 // Browse Location Modal
                 document.getElementById('closeBrowseLocationModal').addEventListener('click', () => this.closeBrowseLocationModal());
                 document.getElementById('refreshBrowseLocation').addEventListener('click', () => {
@@ -900,8 +984,11 @@
                     return;
                 }
 
-                locationsList.innerHTML = locations.map(location => `
-                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                locationsList.innerHTML = '';
+                locations.forEach(location => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg';
+                    div.innerHTML = `
                         <div class="flex items-center">
                             <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
                             <span class="font-medium">${location}</span>
@@ -909,11 +996,13 @@
                                 (${currentData.filter(item => item.Lokalizacja === location).length} przedmiotów)
                             </span>
                         </div>
-                        <button class="text-red-600 hover:text-red-800" onclick="app.removeLocation('${location}')" title="Usuń lokalizację">
+                        <button class="text-red-600 hover:text-red-800" title="Usuń lokalizację">
                             <i class="fas fa-trash"></i>
                         </button>
-                    </div>
-                `).join('');
+                    `;
+                    div.querySelector('button').addEventListener('click', () => this.removeLocation(location));
+                    locationsList.appendChild(div);
+                });
             }
 
             // Browse Location Methods
@@ -1139,12 +1228,13 @@
                             </span>
                         </td>
                         <td class="action-buttons">
-                            <button class="btn-edit" onclick="app.editItem(${item.ID})" title="Edytuj">
+                            <button class="btn-edit" onclick="app.editItem(${item.ID})" title="Edytuj przedmiot">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn-delete" onclick="app.deleteItem(${item.ID})" 
-                                    ${item.Status === 'usunięty' ? 'disabled' : ''} title="Usuń">
-                                <i class="fas fa-trash"></i>
+                            <button class="${item.Status === 'usunięty' ? 'btn-edit' : 'btn-delete'}" 
+                                    onclick="app.deleteItem(${item.ID})" 
+                                    title="${item.Status === 'usunięty' ? 'Przywróć przedmiot' : 'Usuń przedmiot'}">
+                                <i class="fas fa-${item.Status === 'usunięty' ? 'undo' : 'trash'}"></i>
                             </button>
                         </td>
                     </tr>
@@ -1152,6 +1242,12 @@
 
                 this.updatePagination(displayData.length);
                 document.getElementById('pagination').style.display = displayData.length > itemsPerPage ? 'flex' : 'none';
+                // Jeśli strona jest poza zakresem (np. po filtrowaniu), wróć do 1
+                const totalPages = Math.ceil(displayData.length / itemsPerPage);
+                if (currentPage > totalPages && totalPages > 0) {
+                    currentPage = 1;
+                    this.displayInventoryTable();
+                }
             }
 
             formatCurrency(price) {
@@ -1208,7 +1304,7 @@
                 };
 
                 document.getElementById('debugInfo').innerHTML = `
-                    <strong>Wersja:</strong> ${debugInfo.version} (PWA z lokalizacjami)<br>
+                    <strong>Wersja:</strong> ${debugInfo.version}<br>
                     <strong>Storage Key:</strong> ${debugInfo.storageKey}<br>
                     <strong>Locations Key:</strong> ${debugInfo.locationsKey}<br>
                     <strong>Liczba przedmiotów:</strong> ${debugInfo.dataCount}<br>
@@ -1232,7 +1328,7 @@
             }
 
             clearAllData() {
-                if (!confirm('Czy na pewno chcesz wyczyścić WSZYSTKIE dane V10 (przedmioty + lokalizacje)? Ta operacja jest nieodwracalna!')) {
+                if (!confirm('Czy na pewno chcesz wyczyścić WSZYSTKIE dane (przedmioty + lokalizacje)?\nTa operacja jest nieodwracalna!\n\nDane zostaną usunięte również z chmury Firebase.')) {
                     return;
                 }
 
@@ -1242,12 +1338,23 @@
                 isSearchActive = false;
                 localStorage.removeItem(STORAGE_KEY);
                 localStorage.removeItem(LOCATIONS_KEY);
+
+                // Wyczyść również Firebase
+                if (window._firebaseReady && window._fbSetDoc) {
+                    window._fbSetDoc(window._fbInvDoc, { items: [], updatedAt: window._fbServerTimestamp() })
+                        .then(() => console.log('[Firebase] Inwentarz wyczyszczony ✓'))
+                        .catch(e => console.error('[Firebase] Błąd czyszczenia inwentarza:', e));
+                    window._fbSetDoc(window._fbInvLocDoc, { locations: [], updatedAt: window._fbServerTimestamp() })
+                        .then(() => console.log('[Firebase] Lokalizacje wyczyszczone ✓'))
+                        .catch(e => console.error('[Firebase] Błąd czyszczenia lokalizacji:', e));
+                }
+
+                this.clearSearch();
                 this.displayInventoryTable();
                 this.updateStats();
                 this.loadFilterOptions();
                 this.showDebugInfo();
-                this.clearSearch();
-                this.showSuccess('Wszystkie dane V10 zostały wyczyszczone');
+                this.showSuccess('Wszystkie dane zostały wyczyszczone (lokalnie i w chmurze)');
             }
 
             performSearch() {
@@ -1330,12 +1437,14 @@
                     return;
                 }
 
-                container.innerHTML = suggestions.map(item => `
-                    <div class="suggestion-item" onclick="app.selectSuggestion('${item.Przedmiot || item.Numer_katalogowy}')">
-                        <strong>${item.Przedmiot || '-'}</strong> - ${item.Numer_katalogowy || '-'}
-                        <br><small>${item.Producent || '-'} | ${item.Lokalizacja || '-'} | ${this.formatCurrency(item.Cena_PLN)}</small>
-                    </div>
-                `).join('');
+                container.innerHTML = '';
+                suggestions.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `<strong>${item.Przedmiot || '-'}</strong> - ${item.Numer_katalogowy || '-'}<br><small>${item.Producent || '-'} | ${item.Lokalizacja || '-'} | ${this.formatCurrency(item.Cena_PLN)}</small>`;
+                    div.addEventListener('click', () => this.selectSuggestion(item.Przedmiot || item.Numer_katalogowy));
+                    container.appendChild(div);
+                });
 
                 container.style.display = 'block';
             }
@@ -1347,10 +1456,8 @@
             }
 
             applyFilters() {
-                if (!isSearchActive) {
-                    currentPage = 1;
-                    this.displayInventoryTable();
-                }
+                currentPage = 1;
+                this.displayInventoryTable();
             }
 
             changePage(direction) {
@@ -1701,7 +1808,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                     }
                 };
 
-                reader.readAsText(file);
+                reader.readAsText(file, 'UTF-8');
             }
 
             processCSVImport() {
@@ -1811,7 +1918,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                     }
                 };
 
-                reader.readAsText(file);
+                reader.readAsText(file, 'UTF-8');
             }
 
             parsePrice(value) {
@@ -1867,42 +1974,42 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                                'Numer_katalogowy', 'Numery_zamienne', 'Ilosc', 'Jednostka', 'Cena_PLN', 
                                'Data_dodania', 'Status', 'Notatki'];
                 
-                const csvContent = [
-                    headers.join(','),
-                    ...currentData.map(item => 
-                        headers.map(header => {
-                            const value = item[header] || '';
-                            return typeof value === 'string' && (value.includes(',') || value.includes('"')) 
-                                ? `"${value.replace(/"/g, '""')}"` 
-                                : value;
-                        }).join(',')
-                    )
-                ].join('\n');
+                const csvRows = currentData.map(item => 
+                    headers.map(header => {
+                        const value = item[header] !== undefined && item[header] !== null ? item[header] : '';
+                        const strValue = String(value);
+                        // Zawijamy w cudzysłów jeśli zawiera przecinek, cudzysłów lub nową linię
+                        if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+                            return '"' + strValue.replace(/"/g, '""') + '"';
+                        }
+                        return strValue;
+                    }).join(',')
+                );
 
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const csvContent = [headers.join(','), ...csvRows].join('\n');
+
+                // BOM (\uFEFF) - wymagany aby Excel poprawnie odczytał polskie znaki UTF-8
+                const bom = '\uFEFF';
+                const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
                 const url = URL.createObjectURL(blob);
                 
                 link.setAttribute('href', url);
-                link.setAttribute('download', `magazyn_v9_backup_${new Date().toISOString().split('T')[0]}.csv`);
+                const dateStr = new Date().toISOString().split('T')[0];
+                link.setAttribute('download', `magazyn_backup_${dateStr}.csv`);
                 link.style.visibility = 'hidden';
                 
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                URL.revokeObjectURL(url); // Zwolnij pamięć
                 
-                this.showSuccess('Plik CSV V10 został pobrany');
+                this.showSuccess(`Plik CSV pobrany (${currentData.length} pozycji)`);
             }
 
             editField(id, field) {
-                const item = currentData.find(item => item.ID === id);
-                if (!item) return;
-
-                const cell = event.target;
-                const currentValue = item[field] || '';
-                
-                cell.innerHTML = `<input type="text" class="edit-input" value="${currentValue}" onblur="app.saveField(${id}, '${field}', this.value)" onkeypress="if(event.key==='Enter') this.blur()">`;
-                cell.querySelector('input').focus();
+                // Stara metoda inline - zachowana dla kompatybilności, ale już nie używana
+                this.editItem(id);
             }
 
             saveField(id, field, newValue) {
@@ -1917,27 +2024,122 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
             }
 
             editItem(id) {
-                this.editField(id, 'Przedmiot');
+                const item = currentData.find(item => item.ID === id);
+                if (!item) {
+                    this.showError('Nie znaleziono przedmiotu o ID: ' + id);
+                    return;
+                }
+
+                // Wypełnij pola modalu
+                document.getElementById('editItemId').value = id;
+                document.getElementById('editPrzedmiot').value = item.Przedmiot || '';
+                document.getElementById('editProducent').value = item.Producent || '';
+                document.getElementById('editNumerKat').value = item.Numer_katalogowy || '';
+                document.getElementById('editNumeryZamienne').value = item.Numery_zamienne || '';
+                document.getElementById('editKategoria').value = item.Kategoria || '';
+                document.getElementById('editIlosc').value = item.Ilosc || 0;
+                document.getElementById('editCena').value = item.Cena_PLN || 0;
+                document.getElementById('editNotatki').value = item.Notatki || '';
+
+                // Ustaw jednostkę
+                const jednostkaSelect = document.getElementById('editJednostka');
+                const currentJednostka = item.Jednostka || 'szt';
+                // Sprawdź czy wartość istnieje w opcjach, jeśli nie - dodaj
+                let optExists = Array.from(jednostkaSelect.options).some(o => o.value === currentJednostka);
+                if (!optExists) {
+                    const opt = document.createElement('option');
+                    opt.value = currentJednostka;
+                    opt.textContent = currentJednostka;
+                    jednostkaSelect.appendChild(opt);
+                }
+                jednostkaSelect.value = currentJednostka;
+
+                // Ustaw status
+                document.getElementById('editStatus').value = item.Status || 'aktywny';
+
+                // Wypełnij dropdown lokalizacji
+                const lokSelect = document.getElementById('editLokalizacja');
+                lokSelect.innerHTML = '<option value="">Brak lokalizacji</option>';
+                locations.forEach(loc => {
+                    const opt = document.createElement('option');
+                    opt.value = loc;
+                    opt.textContent = loc;
+                    lokSelect.appendChild(opt);
+                });
+                lokSelect.value = item.Lokalizacja || '';
+
+                // Otwórz modal
+                document.getElementById('editModal').style.display = 'block';
+                document.getElementById('editPrzedmiot').focus();
+                console.log(`✏️ Otwarto edycję dla ID ${id}: ${item.Przedmiot}`);
+            }
+
+            saveEditItem() {
+                const id = parseInt(document.getElementById('editItemId').value);
+                const item = currentData.find(item => item.ID === id);
+                if (!item) {
+                    this.showError('Błąd: nie znaleziono przedmiotu');
+                    return;
+                }
+
+                const przedmiot = document.getElementById('editPrzedmiot').value.trim();
+                if (!przedmiot) {
+                    this.showError('Nazwa przedmiotu jest wymagana');
+                    document.getElementById('editPrzedmiot').focus();
+                    return;
+                }
+
+                // Zapisz wszystkie pola
+                item.Przedmiot = przedmiot;
+                item.Producent = document.getElementById('editProducent').value.trim();
+                item.Numer_katalogowy = document.getElementById('editNumerKat').value.trim();
+                item.Numery_zamienne = document.getElementById('editNumeryZamienne').value.trim();
+                item.Kategoria = document.getElementById('editKategoria').value.trim();
+                item.Ilosc = parseInt(document.getElementById('editIlosc').value) || 0;
+                item.Jednostka = document.getElementById('editJednostka').value;
+                item.Cena_PLN = parseFloat(document.getElementById('editCena').value) || 0;
+                item.Lokalizacja = document.getElementById('editLokalizacja').value;
+                item.Status = document.getElementById('editStatus').value;
+                item.Notatki = document.getElementById('editNotatki').value.trim();
+
+                this.saveToLocalStorage();
+                this.displayInventoryTable();
+                this.updateStats();
+                this.loadFilterOptions();
+
+                document.getElementById('editModal').style.display = 'none';
+                this.showSuccess(`Zapisano zmiany dla: ${item.Przedmiot}`);
+                console.log(`✅ Zaktualizowano przedmiot ID ${id}:`, item);
             }
 
             deleteItem(id) {
-                if (!confirm('Czy na pewno chcesz usunąć ten przedmiot?')) return;
-                
                 const item = currentData.find(item => item.ID === id);
-                if (item) {
-                    item.Status = 'usunięty';
+                if (!item) return;
+
+                if (item.Status === 'usunięty') {
+                    // Przywróć jeśli już usunięty
+                    if (!confirm(`Przywrócić przedmiot "${item.Przedmiot}" do stanu aktywnego?`)) return;
+                    item.Status = 'aktywny';
                     this.saveToLocalStorage();
-                    
                     if (isSearchActive) {
-                        const filteredIndex = filteredData.findIndex(filterItem => filterItem.ID === id);
-                        if (filteredIndex >= 0) {
-                            filteredData[filteredIndex].Status = 'usunięty';
-                        }
+                        const fi = filteredData.findIndex(f => f.ID === id);
+                        if (fi >= 0) filteredData[fi].Status = 'aktywny';
                     }
-                    
                     this.displayInventoryTable();
                     this.updateStats();
-                    this.showSuccess('Przedmiot został oznaczony jako usunięty');
+                    this.showSuccess(`Przywrócono: ${item.Przedmiot}`);
+                    console.log(`♻️ Przywrócono przedmiot ID ${id}: ${item.Przedmiot}`);
+                } else {
+                    if (!confirm(`Usunąć przedmiot "${item.Przedmiot}"?\n\nPrzedmiot zostanie oznaczony jako usunięty (można przywrócić).`)) return;
+                    item.Status = 'usunięty';
+                    this.saveToLocalStorage();
+                    if (isSearchActive) {
+                        const fi = filteredData.findIndex(f => f.ID === id);
+                        if (fi >= 0) filteredData[fi].Status = 'usunięty';
+                    }
+                    this.displayInventoryTable();
+                    this.updateStats();
+                    this.showSuccess(`Usunięto: ${item.Przedmiot} (można przywrócić)`);
                     console.log(`🗑️ Usunięto przedmiot ID ${id}: ${item.Przedmiot}`);
                 }
             }
