@@ -50,6 +50,7 @@
         .btn-delete:hover { background: #dc2626; }
         .debug-info { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; font-size: 12px; }
         .search-active { background-color: #fff3cd; border: 2px solid #ffc107; }
+        .search-selected { background-color: #dbeafe !important; outline: 2px solid #3b82f6; }
         .install-prompt { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .install-button { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
         .install-button:hover { background: rgba(255,255,255,0.3); }
@@ -605,6 +606,7 @@
         let currentPage = 1;
         let itemsPerPage = 50;
         let pendingAIItems = [];
+        let selectedSearchItemId = null;
         let deferredInstallPrompt = null;
         let locations = [];
 
@@ -1165,6 +1167,13 @@
             getCurrentDisplayData() {
                 let displayData = currentData;
 
+                // Jeśli użytkownik wybrał konkretną sugestię z wyszukiwarki,
+                // pokaż dokładnie ten rekord niezależnie od dodatkowych filtrów.
+                if (selectedSearchItemId !== null) {
+                    const selectedItem = currentData.find(item => item.ID === selectedSearchItemId);
+                    return selectedItem ? [selectedItem] : [];
+                }
+
                 // Apply search filter
                 if (isSearchActive) {
                     displayData = filteredData;
@@ -1214,7 +1223,7 @@
                 const pageItems = displayData.slice(startIndex, endIndex);
 
                 tbody.innerHTML = pageItems.map(item => `
-                    <tr class="${item.Status === 'usunięty' ? 'bg-red-50' : ''} ${isSearchActive ? 'search-active' : ''}">
+                    <tr data-item-id="${item.ID}" class="${item.Status === 'usunięty' ? 'bg-red-50' : ''} ${isSearchActive ? 'search-active' : ''} ${selectedSearchItemId === item.ID ? 'search-selected' : ''}">
                         <td>${item.ID}</td>
                         <td class="text-xs">${item.Lokalizacja || '-'}</td>
                         <td class="editable font-medium" onclick="app.editField(${item.ID}, 'Przedmiot')">${item.Przedmiot || '-'}</td>
@@ -1242,6 +1251,7 @@
 
                 this.updatePagination(displayData.length);
                 document.getElementById('pagination').style.display = displayData.length > itemsPerPage ? 'flex' : 'none';
+                this.scrollToSelectedSearchRow();
                 // Jeśli strona jest poza zakresem (np. po filtrowaniu), wróć do 1
                 const totalPages = Math.ceil(displayData.length / itemsPerPage);
                 if (currentPage > totalPages && totalPages > 0) {
@@ -1364,6 +1374,7 @@
                     return;
                 }
 
+                selectedSearchItemId = null;
                 console.log(`🔍 V10 Search: "${query}" in ${currentData.length} items`);
 
                 filteredData = currentData.filter(item => {
@@ -1409,6 +1420,7 @@
                 
                 isSearchActive = false;
                 filteredData = [];
+                selectedSearchItemId = null;
                 currentPage = 1;
                 
                 this.displayInventoryTable();
@@ -1442,17 +1454,50 @@
                     const div = document.createElement('div');
                     div.className = 'suggestion-item';
                     div.innerHTML = `<strong>${item.Przedmiot || '-'}</strong> - ${item.Numer_katalogowy || '-'}<br><small>${item.Producent || '-'} | ${item.Lokalizacja || '-'} | ${this.formatCurrency(item.Cena_PLN)}</small>`;
-                    div.addEventListener('click', () => this.selectSuggestion(item.Przedmiot || item.Numer_katalogowy));
+                    div.addEventListener('click', () => this.selectSuggestion(item));
                     container.appendChild(div);
                 });
 
                 container.style.display = 'block';
             }
 
-            selectSuggestion(text) {
-                document.getElementById('searchInput').value = text;
+            selectSuggestion(item) {
+                if (!item) return;
+
+                const searchInput = document.getElementById('searchInput');
+                const searchInfo = document.getElementById('searchInfo');
+                const itemLabel = item.Numer_katalogowy || item.Przedmiot || '';
+
+                searchInput.value = itemLabel;
                 document.getElementById('searchSuggestions').style.display = 'none';
-                this.performSearch();
+                document.getElementById('clearSearchBtn').style.display = 'inline-block';
+
+                selectedSearchItemId = item.ID;
+                filteredData = [item];
+                isSearchActive = true;
+                currentPage = 1;
+
+                searchInfo.innerHTML = `
+                    <i class="fas fa-crosshairs mr-2"></i>
+                    <strong>Wybrany rekord:</strong> ${item.Przedmiot || '-'}
+                    ${item.Numer_katalogowy ? `(${item.Numer_katalogowy})` : ''}
+                    ${item.Lokalizacja ? `- lokalizacja: ${item.Lokalizacja}` : ''}
+                `;
+                searchInfo.style.display = 'block';
+
+                this.displayInventoryTable();
+                this.showSuccess(`Pokazano rekord: ${item.Przedmiot || item.Numer_katalogowy || 'bez nazwy'}`);
+            }
+
+            scrollToSelectedSearchRow() {
+                if (selectedSearchItemId === null) return;
+
+                requestAnimationFrame(() => {
+                    const selectedRow = document.querySelector(`tr[data-item-id="${selectedSearchItemId}"]`);
+                    if (selectedRow) {
+                        selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
             }
 
             applyFilters() {
@@ -2197,5 +2242,6 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
             checkLogin();
         });
     </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
