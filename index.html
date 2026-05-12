@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inwentaryzacja Magazynu - V10</title>
+    <title>Inwentaryzacja Magazynu - V10A</title>
     
     <!-- PWA Meta Tags for Mobile Install -->
     <meta name="theme-color" content="#3b82f6">
@@ -122,16 +122,23 @@
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">
                 <i class="fas fa-boxes mr-2 text-blue-600"></i>
-                Inwentaryzacja Magazynu - V10
+                Inwentaryzacja Magazynu - V10A
             </h1>
-            <p class="text-gray-600">System zarządzania zapasami z DeepSeek AI + Zarządzanie lokalizacjami</p>
+            <p class="text-gray-600">System zarządzania zapasami z AI, ręcznym dodawaniem i lokalizacjami</p>
+            <div id="aiStatusInfo" class="mt-3 text-sm text-gray-500"></div>
         </div>
 
         <!-- Quick Actions -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+                <button id="manualAddBtn" class="bg-emerald-600 text-white p-4 rounded-lg hover:bg-emerald-700 transition-colors">
+                    <i class="fas fa-plus-circle mr-2"></i>Dodaj ręcznie
+                </button>
                 <button id="voiceBtn" class="bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition-colors">
                     <i class="fas fa-microphone mr-2"></i>Dodaj głosowo (AI)
+                </button>
+                <button id="aiSettingsBtn" class="bg-indigo-600 text-white p-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                    <i class="fas fa-key mr-2"></i>Ustawienia AI
                 </button>
                 <button id="importBtn" class="bg-purple-600 text-white p-4 rounded-lg hover:bg-purple-700 transition-colors">
                     <i class="fas fa-upload mr-2"></i>Import CSV
@@ -149,7 +156,7 @@
                     <i class="fas fa-bug mr-2"></i>Debug Info
                 </button>
                 <button id="clearBtn" class="bg-red-600 text-white p-4 rounded-lg hover:bg-red-700 transition-colors">
-                    <i class="fas fa-trash mr-2"></i>Wyczyść V10
+                    <i class="fas fa-trash mr-2"></i>Wyczyść V10A
                 </button>
             </div>
         </div>
@@ -194,7 +201,7 @@
 
         <!-- Debug Info -->
         <div id="debugSection" class="bg-white rounded-lg shadow-lg p-6 mb-6" style="display: none;">
-            <h3 class="text-lg font-semibold mb-4">Debug Information - V10</h3>
+            <h3 class="text-lg font-semibold mb-4">Debug Information - V10A</h3>
             <div id="debugInfo" class="debug-info">Brak informacji debugowych</div>
         </div>
 
@@ -239,7 +246,7 @@
                             <td colspan="9" class="text-center p-8">
                                 <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
                                 <p class="text-gray-500">Brak danych. Kliknij "Import CSV" aby wczytać bazę danych.</p>
-                                <p class="text-sm text-gray-400 mt-2">Wersja V9 - PWA z zarządzaniem lokalizacjami</p>
+                                <p class="text-sm text-gray-400 mt-2">Wersja V10A - PWA z ręcznym dodawaniem i zarządzaniem lokalizacjami</p>
                             </td>
                         </tr>
                     </tbody>
@@ -260,7 +267,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-microphone mr-2"></i>Dodawanie głosowe - V10 (PWA)
+                    <i class="fas fa-microphone mr-2"></i>Dodawanie głosowe - V10A (PWA)
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -322,7 +329,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-map-marker-alt mr-2"></i>Zarządzanie lokalizacjami - V10
+                    <i class="fas fa-map-marker-alt mr-2"></i>Zarządzanie lokalizacjami - V10A
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -356,7 +363,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-eye mr-2"></i>Przegląd przedmiotów w lokalizacji - V10
+                    <i class="fas fa-eye mr-2"></i>Przegląd przedmiotów w lokalizacji - V10A
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -396,6 +403,150 @@
                 <button id="refreshBrowseLocation" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
                     <i class="fas fa-sync-alt mr-2"></i>Odśwież
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Add Modal -->
+    <div id="manualAddModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold">
+                    <i class="fas fa-plus-circle mr-2"></i>Dodaj przedmiot ręcznie - V10A
+                </h3>
+                <span class="close">&times;</span>
+            </div>
+
+            <div class="mb-4 bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
+                Tryb ręczny działa bez przetwarzania przez AI. Przydaje się, gdy internet albo zewnętrzna usługa AI nie działa.
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium mb-1">Przedmiot <span class="text-red-500">*</span></label>
+                    <input type="text" id="manualPrzedmiot" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Nazwa przedmiotu">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Producent</label>
+                    <input type="text" id="manualProducent" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Producent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Numer katalogowy</label>
+                    <input type="text" id="manualNumerKat" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Nr katalogowy">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Numery zamienne</label>
+                    <input type="text" id="manualNumeryZamienne" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Numery zamienne">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Kategoria</label>
+                    <input type="text" id="manualKategoria" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Kategoria">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Ilość</label>
+                    <input type="number" id="manualIlosc" class="w-full p-3 border border-gray-300 rounded-lg" min="0" value="1" placeholder="1">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Jednostka</label>
+                    <select id="manualJednostka" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <option value="szt">szt</option>
+                        <option value="kg">kg</option>
+                        <option value="l">l</option>
+                        <option value="m">m</option>
+                        <option value="para">para</option>
+                        <option value="komplet">komplet</option>
+                        <option value="zestaw">zestaw</option>
+                        <option value="opakowanie">opakowanie</option>
+                        <option value="karton">karton</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Cena (PLN)</label>
+                    <input type="number" id="manualCena" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="0.01" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Lokalizacja</label>
+                    <select id="manualLokalizacja" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <option value="">Brak lokalizacji</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Nowa lokalizacja (opcjonalnie)</label>
+                    <input type="text" id="manualNewLocation" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Wpisz, jeśli chcesz dodać nową lokalizację">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Status</label>
+                    <select id="manualStatus" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <option value="aktywny">Aktywny</option>
+                        <option value="usunięty">Usunięty</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium mb-1">Notatki</label>
+                    <textarea id="manualNotatki" rows="3" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Dodatkowe notatki..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-6">
+                <button id="cancelManualBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Anuluj</button>
+                <button id="saveManualBtn" class="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700">
+                    <i class="fas fa-save mr-2"></i>Dodaj przedmiot
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Settings Modal -->
+    <div id="aiSettingsModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold">
+                    <i class="fas fa-key mr-2"></i>Ustawienia AI - V10A
+                </h3>
+                <span class="close">&times;</span>
+            </div>
+
+            <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                Klucz i ustawienia AI są zapisywane lokalnie w tej przeglądarce. To wystarczy dla prywatnego użytku, ale nie jest to rozwiązanie serwerowe.
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Dostawca</label>
+                    <select id="aiProvider" class="w-full p-3 border border-gray-300 rounded-lg">
+                        <option value="deepseek">DeepSeek</option>
+                        <option value="openai_compatible">Inny kompatybilny z OpenAI</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Model</label>
+                    <input type="text" id="aiModel" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Np. deepseek-chat">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium mb-1">Endpoint API</label>
+                    <input type="text" id="aiEndpoint" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="https://api.deepseek.com/chat/completions">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium mb-1">Klucz API</label>
+                    <input type="password" id="aiApiKey" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Wklej klucz API">
+                </div>
+            </div>
+
+            <div id="aiSettingsInfo" class="mt-4 text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                Ustawienia jeszcze nie zostały sprawdzone.
+            </div>
+
+            <div class="flex flex-wrap justify-end gap-3 mt-6">
+                <button id="fillDeepSeekDefaultsBtn" class="bg-slate-600 text-white px-6 py-3 rounded-lg hover:bg-slate-700">
+                    <i class="fas fa-rotate-left mr-2"></i>Ustaw DeepSeek
+                </button>
+                <button id="testAISettingsBtn" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700">
+                    <i class="fas fa-plug mr-2"></i>Test połączenia
+                </button>
+                <button id="saveAISettingsBtn" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700">
+                    <i class="fas fa-save mr-2"></i>Zapisz ustawienia
+                </button>
+                <button id="cancelAISettingsBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Zamknij</button>
             </div>
         </div>
     </div>
@@ -488,7 +639,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-upload mr-2"></i>Import CSV - V10
+                    <i class="fas fa-upload mr-2"></i>Import CSV - V10A
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -609,10 +760,18 @@
         let selectedSearchItemId = null;
         let deferredInstallPrompt = null;
         let locations = [];
+        let aiSettings = null;
 
         // DeepSeek AI Configuration
         const DEEPSEEK_API_KEY = 'sk-63131981686c41399c7b43007a913de0';
         const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
+        const AI_SETTINGS_KEY = 'inventory_ai_settings_v10a_andy';
+        const DEFAULT_AI_SETTINGS = {
+            provider: 'deepseek',
+            endpoint: DEEPSEEK_API_URL,
+            model: 'deepseek-chat',
+            apiKey: DEEPSEEK_API_KEY
+        };
 
         // V10 Storage keys - separate from previous versions
         const STORAGE_KEY = 'inventoryData_v10_andy';
@@ -821,13 +980,14 @@
 
         class InventoryApp {
             constructor() {
-                console.log('🚀 Inwentaryzacja Magazynu V10 - v3 (długie teksty + przegląd lokalizacji)');
+                console.log('🚀 Inwentaryzacja Magazynu V10A - v4 (ręczne dodawanie + ustawienia AI)');
                 this.init();
             }
 
             init() {
                 this.setupEventListeners();
                 window._appInstance = this;
+                this.loadAISettings();
                 const self = this;
                 // Najpierw wczytaj z Firebase, potem zainicjalizuj UI
                 (async function() {
@@ -837,15 +997,18 @@
                     self.displayInventoryTable();
                     self.updateStats();
                     self.loadFilterOptions();
+                    self.updateAIStatusInfo();
                     self.showDebugInfo();
                     fbStartListener();
-                    console.log('✅ Aplikacja V10 zainicjalizowana z Firebase sync');
+                    console.log('✅ Aplikacja V10A zainicjalizowana z Firebase sync');
                 })();
             }
 
             setupEventListeners() {
                 // Buttons
+                document.getElementById('manualAddBtn').addEventListener('click', () => this.showManualAddModal());
                 document.getElementById('voiceBtn').addEventListener('click', () => this.showVoiceModal());
+                document.getElementById('aiSettingsBtn').addEventListener('click', () => this.showAISettingsModal());
                 document.getElementById('importBtn').addEventListener('click', () => this.showImportModal());
                 document.getElementById('exportBtn').addEventListener('click', () => this.exportCSV());
                 document.getElementById('locationsBtn').addEventListener('click', () => this.showLocationsModal());
@@ -875,6 +1038,22 @@
                 document.getElementById('clearVoice').addEventListener('click', () => this.clearVoiceText());
                 document.getElementById('saveItems').addEventListener('click', () => this.saveAIItems());
                 document.getElementById('cancelVoice').addEventListener('click', () => this.closeVoiceModal());
+
+                // Manual Add Modal
+                document.getElementById('saveManualBtn').addEventListener('click', () => this.saveManualItem());
+                document.getElementById('cancelManualBtn').addEventListener('click', () => this.closeManualAddModal());
+                document.getElementById('manualAddModal').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                        this.saveManualItem();
+                    }
+                });
+
+                // AI Settings Modal
+                document.getElementById('cancelAISettingsBtn').addEventListener('click', () => this.closeAISettingsModal());
+                document.getElementById('saveAISettingsBtn').addEventListener('click', () => this.saveAISettingsFromForm());
+                document.getElementById('testAISettingsBtn').addEventListener('click', () => this.testAIConnection());
+                document.getElementById('fillDeepSeekDefaultsBtn').addEventListener('click', () => this.applyDeepSeekDefaults(true));
+                document.getElementById('aiProvider').addEventListener('change', () => this.handleAIProviderChange());
 
                 // Locations Modal
                 document.getElementById('addLocationBtn').addEventListener('click', () => this.addLocation());
@@ -922,6 +1101,262 @@
                         e.target.style.display = 'none';
                     }
                 });
+            }
+
+            loadAISettings() {
+                try {
+                    const rawSettings = localStorage.getItem(AI_SETTINGS_KEY);
+                    if (rawSettings) {
+                        aiSettings = { ...DEFAULT_AI_SETTINGS, ...JSON.parse(rawSettings) };
+                    } else {
+                        aiSettings = { ...DEFAULT_AI_SETTINGS };
+                        localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(aiSettings));
+                    }
+                } catch (error) {
+                    console.error('Błąd ładowania ustawień AI:', error);
+                    aiSettings = { ...DEFAULT_AI_SETTINGS };
+                }
+            }
+
+            getResolvedAISettings(overrides = {}) {
+                const settings = { ...DEFAULT_AI_SETTINGS, ...(aiSettings || {}), ...(overrides || {}) };
+                settings.provider = settings.provider || 'deepseek';
+                settings.apiKey = (settings.apiKey || '').trim();
+                settings.endpoint = (settings.endpoint || '').trim();
+                settings.model = (settings.model || '').trim();
+
+                if (settings.provider === 'deepseek') {
+                    if (!settings.endpoint) settings.endpoint = DEEPSEEK_API_URL;
+                    if (!settings.model) settings.model = 'deepseek-chat';
+                }
+
+                return settings;
+            }
+
+            updateAIStatusInfo() {
+                const info = document.getElementById('aiStatusInfo');
+                if (!info) return;
+
+                const settings = this.getResolvedAISettings();
+                const providerLabel = settings.provider === 'deepseek' ? 'DeepSeek' : 'Kompatybilny z OpenAI';
+                const keyStatus = settings.apiKey ? 'klucz ustawiony' : 'brak klucza';
+                info.innerHTML = `<strong>AI:</strong> ${providerLabel} | <strong>model:</strong> ${settings.model || '-'} | <strong>status:</strong> ${keyStatus}`;
+            }
+
+            fillAISettingsForm(settings = null) {
+                const resolved = this.getResolvedAISettings(settings || {});
+                document.getElementById('aiProvider').value = resolved.provider;
+                document.getElementById('aiEndpoint').value = resolved.endpoint;
+                document.getElementById('aiModel').value = resolved.model;
+                document.getElementById('aiApiKey').value = resolved.apiKey;
+            }
+
+            handleAIProviderChange() {
+                const provider = document.getElementById('aiProvider').value;
+                if (provider === 'deepseek') {
+                    document.getElementById('aiEndpoint').value = DEEPSEEK_API_URL;
+                    document.getElementById('aiModel').value = 'deepseek-chat';
+                }
+            }
+
+            applyDeepSeekDefaults(showMessage = false) {
+                this.fillAISettingsForm({
+                    provider: 'deepseek',
+                    endpoint: DEEPSEEK_API_URL,
+                    model: 'deepseek-chat',
+                    apiKey: (document.getElementById('aiApiKey').value || '').trim() || this.getResolvedAISettings().apiKey
+                });
+                if (showMessage) {
+                    document.getElementById('aiSettingsInfo').textContent = 'Przywrócono domyślne pola dla DeepSeek. Możesz teraz zapisać albo przetestować.';
+                }
+            }
+
+            showAISettingsModal() {
+                this.fillAISettingsForm();
+                document.getElementById('aiSettingsInfo').textContent = 'Możesz zmienić klucz, model albo endpoint i od razu przetestować połączenie.';
+                document.getElementById('aiSettingsModal').style.display = 'block';
+                document.getElementById('aiApiKey').focus();
+            }
+
+            closeAISettingsModal() {
+                document.getElementById('aiSettingsModal').style.display = 'none';
+            }
+
+            readAISettingsFromForm() {
+                const provider = document.getElementById('aiProvider').value;
+                const formSettings = {
+                    provider,
+                    endpoint: document.getElementById('aiEndpoint').value.trim(),
+                    model: document.getElementById('aiModel').value.trim(),
+                    apiKey: document.getElementById('aiApiKey').value.trim()
+                };
+
+                return this.getResolvedAISettings(formSettings);
+            }
+
+            saveAISettingsFromForm() {
+                const settings = this.readAISettingsFromForm();
+
+                if (!settings.apiKey) {
+                    this.showError('Wprowadź klucz API');
+                    return;
+                }
+
+                if (!settings.endpoint) {
+                    this.showError('Wprowadź endpoint API');
+                    return;
+                }
+
+                if (!settings.model) {
+                    this.showError('Wprowadź nazwę modelu');
+                    return;
+                }
+
+                aiSettings = settings;
+                localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(aiSettings));
+                this.updateAIStatusInfo();
+                document.getElementById('aiSettingsInfo').textContent = 'Ustawienia AI zostały zapisane lokalnie w tej przeglądarce.';
+                this.showSuccess('Zapisano ustawienia AI');
+            }
+
+            async testAIConnection() {
+                const testButton = document.getElementById('testAISettingsBtn');
+                const infoBox = document.getElementById('aiSettingsInfo');
+                const settings = this.readAISettingsFromForm();
+
+                if (!settings.apiKey || !settings.endpoint || !settings.model) {
+                    this.showError('Uzupełnij klucz, endpoint i model przed testem');
+                    return;
+                }
+
+                testButton.disabled = true;
+                infoBox.textContent = 'Trwa test połączenia z AI...';
+
+                try {
+                    const response = await fetch(settings.endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${settings.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: settings.model,
+                            messages: [{ role: 'user', content: 'Odpowiedz tylko słowem OK.' }],
+                            temperature: 0,
+                            max_tokens: 10
+                        })
+                    });
+
+                    if (!response.ok) {
+                        let details = '';
+                        try {
+                            const errorData = await response.json();
+                            details = errorData?.error?.message || errorData?.message || '';
+                        } catch (e) {}
+                        throw new Error(`HTTP ${response.status}${details ? ` - ${details}` : ''}`);
+                    }
+
+                    const data = await response.json();
+                    const reply = data?.choices?.[0]?.message?.content || 'Brak treści odpowiedzi';
+                    infoBox.textContent = `Test połączenia zakończony powodzeniem. Odpowiedź: ${reply}`;
+                    this.showSuccess('Połączenie z AI działa');
+                } catch (error) {
+                    infoBox.textContent = `Test nieudany: ${error.message}`;
+                    this.showError('Test połączenia z AI nie powiódł się');
+                } finally {
+                    testButton.disabled = false;
+                }
+            }
+
+            showManualAddModal() {
+                this.loadFilterOptions();
+                this.resetManualForm();
+                document.getElementById('manualAddModal').style.display = 'block';
+                document.getElementById('manualPrzedmiot').focus();
+            }
+
+            closeManualAddModal() {
+                document.getElementById('manualAddModal').style.display = 'none';
+                this.resetManualForm();
+            }
+
+            resetManualForm() {
+                document.getElementById('manualPrzedmiot').value = '';
+                document.getElementById('manualProducent').value = '';
+                document.getElementById('manualNumerKat').value = '';
+                document.getElementById('manualNumeryZamienne').value = '';
+                document.getElementById('manualKategoria').value = '';
+                document.getElementById('manualIlosc').value = 1;
+                document.getElementById('manualJednostka').value = 'szt';
+                document.getElementById('manualCena').value = '';
+                document.getElementById('manualLokalizacja').value = '';
+                document.getElementById('manualNewLocation').value = '';
+                document.getElementById('manualStatus').value = 'aktywny';
+                document.getElementById('manualNotatki').value = '';
+            }
+
+            getNextItemId() {
+                return currentData.length > 0 ? Math.max(...currentData.map(item => Number(item.ID) || 0)) + 1 : 1;
+            }
+
+            focusOnSingleItem(item, label = 'Wybrany rekord') {
+                if (!item) return;
+
+                selectedSearchItemId = item.ID;
+                filteredData = [item];
+                isSearchActive = true;
+                currentPage = 1;
+
+                document.getElementById('searchInput').value = item.Numer_katalogowy || item.Przedmiot || '';
+                document.getElementById('clearSearchBtn').style.display = 'inline-block';
+                document.getElementById('searchInfo').innerHTML = `
+                    <i class="fas fa-crosshairs mr-2"></i>
+                    <strong>${label}:</strong> ${item.Przedmiot || '-'}
+                    ${item.Numer_katalogowy ? `(${item.Numer_katalogowy})` : ''}
+                    ${item.Lokalizacja ? `- lokalizacja: ${item.Lokalizacja}` : ''}
+                `;
+                document.getElementById('searchInfo').style.display = 'block';
+                this.displayInventoryTable();
+            }
+
+            saveManualItem() {
+                const przedmiot = document.getElementById('manualPrzedmiot').value.trim();
+                if (!przedmiot) {
+                    this.showError('Nazwa przedmiotu jest wymagana');
+                    document.getElementById('manualPrzedmiot').focus();
+                    return;
+                }
+
+                let location = document.getElementById('manualNewLocation').value.trim() || document.getElementById('manualLokalizacja').value;
+                if (location && !locations.includes(location)) {
+                    locations.push(location);
+                    this.saveLocationsToStorage();
+                }
+
+                const newItem = {
+                    ID: this.getNextItemId(),
+                    Budynek: 'Sklep',
+                    Lokalizacja: location,
+                    Przedmiot: przedmiot,
+                    Producent: document.getElementById('manualProducent').value.trim(),
+                    Numer_katalogowy: document.getElementById('manualNumerKat').value.trim(),
+                    Numery_zamienne: document.getElementById('manualNumeryZamienne').value.trim(),
+                    Kategoria: document.getElementById('manualKategoria').value.trim(),
+                    Ilosc: parseInt(document.getElementById('manualIlosc').value) || 0,
+                    Jednostka: document.getElementById('manualJednostka').value || 'szt',
+                    Cena_PLN: parseFloat(document.getElementById('manualCena').value) || 0,
+                    Status: document.getElementById('manualStatus').value || 'aktywny',
+                    Notatki: document.getElementById('manualNotatki').value.trim(),
+                    Data_dodania: new Date().toISOString().split('T')[0]
+                };
+
+                currentData.push(newItem);
+                this.saveToLocalStorage();
+                this.loadFilterOptions();
+                this.updateStats();
+                this.focusOnSingleItem(newItem, 'Dodano ręcznie');
+                this.closeManualAddModal();
+                this.showSuccess(`Dodano ręcznie: ${newItem.Przedmiot}`);
             }
 
             // Location Management Functions
@@ -1113,6 +1548,15 @@
                     voiceLocation.innerHTML += `<option value="${location}">${location}</option>`;
                 });
 
+                // Load locations for manual add modal
+                const manualLocation = document.getElementById('manualLokalizacja');
+                if (manualLocation) {
+                    manualLocation.innerHTML = '<option value="">Brak lokalizacji</option>';
+                    locations.forEach(location => {
+                        manualLocation.innerHTML += `<option value="${location}">${location}</option>`;
+                    });
+                }
+
                 // Load locations for browse modal
                 const browseLocation = document.getElementById('browseLocationSelect');
                 if (browseLocation) {
@@ -1302,7 +1746,7 @@
 
             showDebugInfo() {
                 const debugInfo = {
-                    version: 'V10',
+                    version: 'V10A',
                     storageKey: STORAGE_KEY,
                     locationsKey: LOCATIONS_KEY,
                     dataCount: currentData.length,
@@ -1494,7 +1938,7 @@
 
                 requestAnimationFrame(() => {
                     const selectedRow = document.querySelector(`tr[data-item-id="${selectedSearchItemId}"]`);
-                    if (selectedRow) {
+                    if (selectedRow && typeof selectedRow.scrollIntoView === 'function') {
                         selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                 });
@@ -1572,7 +2016,7 @@
                             console.log(`🔍 Przetwarzanie części ${i + 1}/${totalParts}, znaków: ${part.length}`);
                             
                             try {
-                                const aiResponse = await this.callDeepSeekAPI(part);
+                                const aiResponse = await this.callAIAPI(part);
                                 if (Array.isArray(aiResponse)) {
                                     allResults = allResults.concat(aiResponse);
                                     console.log(`✅ Część ${i + 1} przetworzona pomyślnie, znaleziono ${aiResponse.length} przedmiotów`);
@@ -1589,7 +2033,7 @@
                         }
                     } else {
                         // Normalne przetwarzanie dla krótkich tekstów
-                        const aiResponse = await this.callDeepSeekAPI(text);
+                        const aiResponse = await this.callAIAPI(text);
                         if (Array.isArray(aiResponse)) {
                             allResults = aiResponse;
                         }
@@ -1655,8 +2099,8 @@
                 return finalParts;
             }
 
-            // ENHANCED AI PROMPT - V9 keeps all V8 improvements
-            async callDeepSeekAPI(text) {
+            // ENHANCED AI PROMPT - V10A keeps all previous improvements
+            async callAIAPI(text) {
                 const prompt = `Jesteś eksperckim asystentem inwentaryzacji magazynu. Musisz DOKŁADNIE przeanalizować tekst użytkownika i wyodrębnić WSZYSTKIE szczegółowe informacje o przedmiotach.
 
 TEKST UŻYTKOWNIKA: "${text}"
@@ -1694,14 +2138,19 @@ Wynik: "Przedmiot": "Młotek duży kilogramowy"
 
 Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
 
-                const response = await fetch(DEEPSEEK_API_URL, {
+                const settings = this.getResolvedAISettings();
+                if (!settings.apiKey) {
+                    throw new Error('Brak klucza AI. Uzupełnij go w menu „Ustawienia AI”.');
+                }
+
+                const response = await fetch(settings.endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                        'Authorization': `Bearer ${settings.apiKey}`
                     },
                     body: JSON.stringify({
-                        model: 'deepseek-chat',
+                        model: settings.model,
                         messages: [{ role: 'user', content: prompt }],
                         temperature: 0.1,
                         max_tokens: 3000
@@ -1709,7 +2158,12 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 });
 
                 if (!response.ok) {
-                    throw new Error(`API Error: ${response.status}`);
+                    let details = '';
+                    try {
+                        const errorData = await response.json();
+                        details = errorData?.error?.message || errorData?.message || '';
+                    } catch (e) {}
+                    throw new Error(`API Error: ${response.status}${details ? ` - ${details}` : ''}`);
                 }
 
                 const data = await response.json();
@@ -2236,7 +2690,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
         // Initialize app - V10 z systemem logowania
         let app;
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Inicjalizacja Inwentaryzacji Magazynu V10 - v3 (długie teksty + przegląd lokalizacji)');
+            console.log('🚀 Inicjalizacja Inwentaryzacji Magazynu V10A - v4 (ręczne dodawanie + ustawienia AI)');
             
             // Sprawdź logowanie na początku - jeśli nie zalogowany, pokaże formularz
             checkLogin();
