@@ -24,9 +24,17 @@
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); }
-        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 800px; border-radius: 8px; max-height: 80vh; overflow-y: auto; }
+        /* Okno można rozciągać za uchwyt w prawym dolnym rogu; rozmiar jest zapamiętywany */
+        .modal-content { background-color: #fefefe; margin: 2vh auto; padding: 20px; border: 1px solid #888; width: min(90%, 800px); max-width: 98vw; border-radius: 8px; max-height: 96vh; overflow-y: auto; resize: both; }
+        /* Tryb pełnoekranowy okna (przycisk ⛶ obok krzyżyka) */
+        .modal-content.modal-maximized { width: 98vw !important; height: 96vh !important; max-width: none !important; max-height: 96vh !important; margin: 1vh auto !important; }
+        .modal-maximize { color: #aaa; font-size: 22px; font-weight: bold; cursor: pointer; line-height: 1; user-select: none; }
+        .modal-maximize:hover { color: black; }
+        /* Pasek akcji przyklejony do dołu modala – przyciski zawsze widoczne bez przewijania */
+        .modal-actions { position: sticky; bottom: 0; background: #fefefe; margin-left: -20px; margin-right: -20px; margin-bottom: -20px; padding: 12px 20px; border-top: 1px solid #ddd; box-shadow: 0 -4px 10px rgba(0,0,0,0.06); z-index: 10; }
         .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .close:hover { color: black; }
+        .pagination button:disabled { opacity: 0.45; cursor: not-allowed; }
         .suggestions { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; background: white; }
         .suggestion-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
         .suggestion-item:hover { background: #f0f0f0; }
@@ -314,7 +322,7 @@
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3 mt-6">
+            <div class="modal-actions flex justify-end gap-3 mt-6">
                 <button id="cancelVoice" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Anuluj</button>
             </div>
 
@@ -352,7 +360,7 @@
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3">
+            <div class="modal-actions flex justify-end gap-3">
                 <button id="closeLocationsModal" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Zamknij</button>
             </div>
         </div>
@@ -398,7 +406,7 @@
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3">
+            <div class="modal-actions flex justify-end gap-3">
                 <button id="closeBrowseLocationModal" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Zamknij</button>
                 <button id="refreshBrowseLocation" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
                     <i class="fas fa-sync-alt mr-2"></i>Odśwież
@@ -444,7 +452,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Ilość</label>
-                    <input type="number" id="manualIlosc" class="w-full p-3 border border-gray-300 rounded-lg" min="0" value="1" placeholder="1">
+                    <input type="number" id="manualIlosc" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="any" value="1" placeholder="1">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Jednostka</label>
@@ -487,7 +495,7 @@
                 </div>
             </div>
 
-            <div class="flex justify-end gap-3 mt-6">
+            <div class="modal-actions flex justify-end gap-3 mt-6">
                 <button id="cancelManualBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Anuluj</button>
                 <button id="saveManualBtn" class="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700">
                     <i class="fas fa-save mr-2"></i>Dodaj przedmiot
@@ -536,7 +544,7 @@
                 Ustawienia jeszcze nie zostały sprawdzone.
             </div>
 
-            <div class="flex flex-wrap justify-end gap-3 mt-6">
+            <div class="modal-actions flex flex-wrap justify-end gap-3 mt-6">
                 <button id="fillDeepSeekDefaultsBtn" class="bg-slate-600 text-white px-6 py-3 rounded-lg hover:bg-slate-700">
                     <i class="fas fa-rotate-left mr-2"></i>Ustaw DeepSeek
                 </button>
@@ -584,7 +592,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Ilość</label>
-                    <input type="number" id="editIlosc" class="w-full p-3 border border-gray-300 rounded-lg" min="0" placeholder="0">
+                    <input type="number" id="editIlosc" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="any" placeholder="0">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Jednostka</label>
@@ -625,7 +633,7 @@
 
             <input type="hidden" id="editItemId">
 
-            <div class="flex justify-end gap-3 mt-6">
+            <div class="modal-actions flex justify-end gap-3 mt-6">
                 <button id="cancelEditBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Anuluj</button>
                 <button id="saveEditBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
                     <i class="fas fa-save mr-2"></i>Zapisz zmiany
@@ -658,7 +666,7 @@
                 <h4 class="font-semibold mb-2">Podgląd importu:</h4>
                 <div id="importStats" class="bg-blue-50 p-3 rounded text-sm"></div>
             </div>
-            <div class="flex justify-end gap-3">
+            <div class="modal-actions flex justify-end gap-3">
                 <button id="cancelImport" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Anuluj</button>
                 <button id="processImport" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
                     <i class="fas fa-upload mr-2"></i>Importuj
@@ -978,6 +986,97 @@
         }
         // =================== KONIEC FIREBASE SYNC ===================
 
+        // Bezpieczne wstawianie tekstu do HTML – nazwy z CSV/AI mogą zawierać <, >, ", &
+        // i bez tego psuły tabelę oraz listy rozwijane
+        function escapeHtml(str) {
+            return String(str === undefined || str === null ? '' : str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // === ROZCIĄGANE I MAKSYMALIZOWANE OKNA MODALNE ===
+        // Każde okno można rozciągnąć za uchwyt w prawym dolnym rogu (rozmiar jest
+        // zapamiętywany w localStorage osobno dla każdego okna) albo zmaksymalizować
+        // przyciskiem ⛶ obok krzyżyka (stan też jest zapamiętywany).
+        function applySavedModalSize(modalId) {
+            const modal = document.getElementById(modalId);
+            const content = modal ? modal.querySelector('.modal-content') : null;
+            if (!content) return;
+            try {
+                if (localStorage.getItem('invModalMax_' + modalId) === 'true') {
+                    content.classList.add('modal-maximized');
+                }
+                const saved = JSON.parse(localStorage.getItem('invModalSize_' + modalId) || 'null');
+                if (saved && saved.w > 200 && saved.h > 150) {
+                    content.style.width = Math.min(saved.w, Math.round(window.innerWidth * 0.98)) + 'px';
+                    content.style.height = Math.min(saved.h, Math.round(window.innerHeight * 0.96)) + 'px';
+                }
+            } catch (e) { /* uszkodzony zapis rozmiaru – ignoruj */ }
+        }
+
+        function toggleModalMaximize(modalId) {
+            const modal = document.getElementById(modalId);
+            const content = modal ? modal.querySelector('.modal-content') : null;
+            if (!content) return;
+            const maximized = !content.classList.contains('modal-maximized');
+            content.classList.toggle('modal-maximized', maximized);
+            localStorage.setItem('invModalMax_' + modalId, maximized ? 'true' : 'false');
+        }
+
+        function initResizableModals() {
+            if (window._modalsResizableInit) return;
+            window._modalsResizableInit = true;
+            document.querySelectorAll('.modal').forEach(function(modal) {
+                if (!modal.id) return;
+                const content = modal.querySelector('.modal-content');
+                if (!content) return;
+                const modalId = modal.id;
+
+                const maxBtn = document.createElement('span');
+                maxBtn.className = 'modal-maximize';
+                maxBtn.title = 'Maksymalizuj / przywróć rozmiar okna';
+                maxBtn.textContent = '⛶';
+                maxBtn.onclick = function() { toggleModalMaximize(modalId); };
+
+                const closeBtn = content.querySelector('.close');
+                if (closeBtn && closeBtn.parentElement) {
+                    // Krzyżyk siedzi w nagłówku flex – zepnij ⛶ i ✕ razem po prawej
+                    const wrap = document.createElement('span');
+                    wrap.style.cssText = 'display:flex;align-items:center;gap:14px;';
+                    closeBtn.parentElement.insertBefore(wrap, closeBtn);
+                    wrap.appendChild(maxBtn);
+                    wrap.appendChild(closeBtn);
+                } else {
+                    content.insertBefore(maxBtn, content.firstChild);
+                }
+
+                applySavedModalSize(modalId);
+
+                // Zapamiętuj rozmiar po ręcznym rozciągnięciu uchwytem.
+                // Rozciągnięcie ustawia inline style.width/height – naturalne zmiany
+                // wysokości treści tego nie robią, więc ich nie zapisujemy.
+                if (typeof ResizeObserver !== 'undefined') {
+                    let saveTimer = null;
+                    new ResizeObserver(function() {
+                        if (modal.style.display !== 'block') return;
+                        if (content.classList.contains('modal-maximized')) return;
+                        if (!content.style.width && !content.style.height) return;
+                        if (saveTimer) clearTimeout(saveTimer);
+                        saveTimer = setTimeout(function() {
+                            const w = Math.round(content.offsetWidth);
+                            const h = Math.round(content.offsetHeight);
+                            if (w > 200 && h > 150) {
+                                localStorage.setItem('invModalSize_' + modalId, JSON.stringify({ w: w, h: h }));
+                            }
+                        }, 400);
+                    }).observe(content);
+                }
+            });
+        }
+
         class InventoryApp {
             constructor() {
                 console.log('🚀 Inwentaryzacja Magazynu V10A - v4 (ręczne dodawanie + ustawienia AI)');
@@ -986,6 +1085,7 @@
 
             init() {
                 this.setupEventListeners();
+                try { initResizableModals(); } catch(e) { console.error('Błąd inicjalizacji okien:', e); }
                 window._appInstance = this;
                 this.loadAISettings();
                 const self = this;
@@ -1022,6 +1122,12 @@
                 document.getElementById('searchInput').addEventListener('input', (e) => this.handleSearchInput(e));
                 document.getElementById('searchInput').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') this.performSearch();
+                });
+                // Chowaj podpowiedzi wyszukiwania po kliknięciu poza wyszukiwarką
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('#searchSuggestions') && e.target.id !== 'searchInput') {
+                        document.getElementById('searchSuggestions').style.display = 'none';
+                    }
                 });
 
                 // Filters
@@ -1295,8 +1401,14 @@
                 document.getElementById('manualNotatki').value = '';
             }
 
+            // Najwyższe istniejące ID - reduce zamiast Math.max(...spread), bo spread
+            // wywala się na bardzo dużych bazach, a ID z CSV bywa tekstem/puste (NaN)
+            getMaxId() {
+                return currentData.reduce((max, item) => Math.max(max, Number(item.ID) || 0), 0);
+            }
+
             getNextItemId() {
-                return currentData.length > 0 ? Math.max(...currentData.map(item => Number(item.ID) || 0)) + 1 : 1;
+                return this.getMaxId() + 1;
             }
 
             focusOnSingleItem(item, label = 'Wybrany rekord') {
@@ -1311,9 +1423,9 @@
                 document.getElementById('clearSearchBtn').style.display = 'inline-block';
                 document.getElementById('searchInfo').innerHTML = `
                     <i class="fas fa-crosshairs mr-2"></i>
-                    <strong>${label}:</strong> ${item.Przedmiot || '-'}
-                    ${item.Numer_katalogowy ? `(${item.Numer_katalogowy})` : ''}
-                    ${item.Lokalizacja ? `- lokalizacja: ${item.Lokalizacja}` : ''}
+                    <strong>${escapeHtml(label)}:</strong> ${escapeHtml(item.Przedmiot || '-')}
+                    ${item.Numer_katalogowy ? `(${escapeHtml(item.Numer_katalogowy)})` : ''}
+                    ${item.Lokalizacja ? `- lokalizacja: ${escapeHtml(item.Lokalizacja)}` : ''}
                 `;
                 document.getElementById('searchInfo').style.display = 'block';
                 this.displayInventoryTable();
@@ -1342,7 +1454,7 @@
                     Numer_katalogowy: document.getElementById('manualNumerKat').value.trim(),
                     Numery_zamienne: document.getElementById('manualNumeryZamienne').value.trim(),
                     Kategoria: document.getElementById('manualKategoria').value.trim(),
-                    Ilosc: parseInt(document.getElementById('manualIlosc').value) || 0,
+                    Ilosc: parseFloat(document.getElementById('manualIlosc').value) || 0,
                     Jednostka: document.getElementById('manualJednostka').value || 'szt',
                     Cena_PLN: parseFloat(document.getElementById('manualCena').value) || 0,
                     Status: document.getElementById('manualStatus').value || 'aktywny',
@@ -1428,7 +1540,7 @@
                     div.innerHTML = `
                         <div class="flex items-center">
                             <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
-                            <span class="font-medium">${location}</span>
+                            <span class="font-medium">${escapeHtml(location)}</span>
                             <span class="text-sm text-gray-500 ml-2">
                                 (${currentData.filter(item => item.Lokalizacja === location).length} przedmiotów)
                             </span>
@@ -1460,7 +1572,7 @@
                 
                 locations.forEach(location => {
                     const itemCount = currentData.filter(item => item.Lokalizacja === location && item.Status === 'aktywny').length;
-                    select.innerHTML += `<option value="${location}">${location} (${itemCount} przedmiotów)</option>`;
+                    select.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)} (${itemCount} przedmiotów)</option>`;
                 });
                 
                 // Jeśli brak lokalizacji, dodaj informację
@@ -1508,13 +1620,13 @@
                     itemsContainer.innerHTML = items.map(item => `
                         <tr class="hover:bg-gray-50">
                             <td class="p-2 border-b">
-                                <div class="font-medium">${item.Przedmiot || '-'}</div>
-                                <div class="text-xs text-gray-500">${item.Producent || ''} ${item.Numer_katalogowy ? '| ' + item.Numer_katalogowy : ''}</div>
+                                <div class="font-medium">${escapeHtml(item.Przedmiot || '-')}</div>
+                                <div class="text-xs text-gray-500">${escapeHtml(item.Producent || '')} ${item.Numer_katalogowy ? '| ' + escapeHtml(item.Numer_katalogowy) : ''}</div>
                             </td>
-                            <td class="p-2 border-b text-center">${item.Ilosc || 0} ${item.Jednostka || 'szt'}</td>
+                            <td class="p-2 border-b text-center">${item.Ilosc || 0} ${escapeHtml(item.Jednostka || 'szt')}</td>
                             <td class="p-2 border-b text-right">${this.formatCurrency(item.Cena_PLN)}</td>
                             <td class="p-2 border-b">
-                                <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-600">${item.Status || 'aktywny'}</span>
+                                <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-600">${escapeHtml(item.Status || 'aktywny')}</span>
                             </td>
                         </tr>
                     `).join('');
@@ -1524,7 +1636,7 @@
                 const totalItems = items.length;
                 const totalValue = items.reduce((sum, item) => {
                     const price = parseFloat(item.Cena_PLN) || 0;
-                    const quantity = parseInt(item.Ilosc) || 0;
+                    const quantity = parseFloat(item.Ilosc) || 0;
                     return sum + (price * quantity);
                 }, 0);
                 
@@ -1534,37 +1646,46 @@
             }
 
             loadFilterOptions() {
-                // Load locations for filters
+                // Przebudowa selectów zachowuje bieżące wybory - wcześniej każde
+                // odświeżenie opcji (np. po edycji przedmiotu) kasowało ustawiony filtr
                 const filterLocation = document.getElementById('filterLocation');
+                const prevFilterLocation = filterLocation.value;
                 filterLocation.innerHTML = '<option value="">Wszystkie lokalizacje</option>';
                 locations.forEach(location => {
-                    filterLocation.innerHTML += `<option value="${location}">${location}</option>`;
+                    filterLocation.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)}</option>`;
                 });
+                filterLocation.value = prevFilterLocation;
 
                 // Load locations for voice modal
                 const voiceLocation = document.getElementById('voiceLocation');
+                const prevVoiceLocation = voiceLocation.value;
                 voiceLocation.innerHTML = '<option value="">Wybierz lokalizację</option>';
                 locations.forEach(location => {
-                    voiceLocation.innerHTML += `<option value="${location}">${location}</option>`;
+                    voiceLocation.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)}</option>`;
                 });
+                voiceLocation.value = prevVoiceLocation;
 
                 // Load locations for manual add modal
                 const manualLocation = document.getElementById('manualLokalizacja');
                 if (manualLocation) {
+                    const prevManualLocation = manualLocation.value;
                     manualLocation.innerHTML = '<option value="">Brak lokalizacji</option>';
                     locations.forEach(location => {
-                        manualLocation.innerHTML += `<option value="${location}">${location}</option>`;
+                        manualLocation.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)}</option>`;
                     });
+                    manualLocation.value = prevManualLocation;
                 }
 
                 // Load locations for browse modal
                 const browseLocation = document.getElementById('browseLocationSelect');
                 if (browseLocation) {
+                    const prevBrowseLocation = browseLocation.value;
                     browseLocation.innerHTML = '<option value="">Wybierz lokalizację...</option>';
                     locations.forEach(location => {
                         const itemCount = currentData.filter(item => item.Lokalizacja === location && item.Status === 'aktywny').length;
-                        browseLocation.innerHTML += `<option value="${location}">${location} (${itemCount} przedmiotów)</option>`;
+                        browseLocation.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)} (${itemCount} przedmiotów)</option>`;
                     });
+                    browseLocation.value = prevBrowseLocation;
                 }
 
                 // Add fallback location if none exist
@@ -1575,11 +1696,13 @@
 
                 // Load categories for filters
                 const filterCategory = document.getElementById('filterCategory');
+                const prevFilterCategory = filterCategory.value;
                 const categories = [...new Set(currentData.map(item => item.Kategoria))].filter(Boolean);
                 filterCategory.innerHTML = '<option value="">Wszystkie kategorie</option>';
                 categories.forEach(category => {
-                    filterCategory.innerHTML += `<option value="${category}">${category}</option>`;
+                    filterCategory.innerHTML += `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`;
                 });
+                filterCategory.value = prevFilterCategory;
             }
 
             saveLocationsToStorage() {
@@ -1669,15 +1792,15 @@
                 tbody.innerHTML = pageItems.map(item => `
                     <tr data-item-id="${item.ID}" class="${item.Status === 'usunięty' ? 'bg-red-50' : ''} ${isSearchActive ? 'search-active' : ''} ${selectedSearchItemId === item.ID ? 'search-selected' : ''}">
                         <td>${item.ID}</td>
-                        <td class="text-xs">${item.Lokalizacja || '-'}</td>
-                        <td class="editable font-medium" onclick="app.editField(${item.ID}, 'Przedmiot')">${item.Przedmiot || '-'}</td>
-                        <td>${item.Producent || '-'}</td>
-                        <td class="font-mono text-sm">${item.Numer_katalogowy || '-'}</td>
-                        <td class="text-center">${item.Ilosc || 0} ${item.Jednostka || 'szt'}</td>
+                        <td class="text-xs">${escapeHtml(item.Lokalizacja || '-')}</td>
+                        <td class="editable font-medium" onclick="app.editField(${item.ID}, 'Przedmiot')">${escapeHtml(item.Przedmiot || '-')}</td>
+                        <td>${escapeHtml(item.Producent || '-')}</td>
+                        <td class="font-mono text-sm">${escapeHtml(item.Numer_katalogowy || '-')}</td>
+                        <td class="text-center">${item.Ilosc || 0} ${escapeHtml(item.Jednostka || 'szt')}</td>
                         <td class="text-right font-medium">${this.formatCurrency(item.Cena_PLN)}</td>
                         <td>
                             <span class="px-2 py-1 rounded text-xs ${item.Status === 'aktywny' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
-                                ${item.Status || 'aktywny'}
+                                ${escapeHtml(item.Status || 'aktywny')}
                             </span>
                         </td>
                         <td class="action-buttons">
@@ -1731,7 +1854,7 @@
 
                 currentData.filter(item => item.Status === 'aktywny').forEach(item => {
                     const price = parseFloat(item.Cena_PLN) || 0;
-                    const quantity = parseInt(item.Ilosc) || 0;
+                    const quantity = parseFloat(item.Ilosc) || 0;
                     stats.totalValue += price * quantity;
                 });
 
@@ -1819,6 +1942,7 @@
                 }
 
                 selectedSearchItemId = null;
+                document.getElementById('searchSuggestions').style.display = 'none';
                 console.log(`🔍 V10 Search: "${query}" in ${currentData.length} items`);
 
                 filteredData = currentData.filter(item => {
@@ -1840,7 +1964,7 @@
                 const searchInfo = document.getElementById('searchInfo');
                 searchInfo.innerHTML = `
                     <i class="fas fa-search mr-2"></i>
-                    <strong>Wyszukiwanie:</strong> "${query}" - znaleziono ${filteredData.length} wyników z ${currentData.length} przedmiotów
+                    <strong>Wyszukiwanie:</strong> "${escapeHtml(query)}" - znaleziono ${filteredData.length} wyników z ${currentData.length} przedmiotów
                 `;
                 searchInfo.style.display = 'block';
 
@@ -1897,7 +2021,7 @@
                 suggestions.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'suggestion-item';
-                    div.innerHTML = `<strong>${item.Przedmiot || '-'}</strong> - ${item.Numer_katalogowy || '-'}<br><small>${item.Producent || '-'} | ${item.Lokalizacja || '-'} | ${this.formatCurrency(item.Cena_PLN)}</small>`;
+                    div.innerHTML = `<strong>${escapeHtml(item.Przedmiot || '-')}</strong> - ${escapeHtml(item.Numer_katalogowy || '-')}<br><small>${escapeHtml(item.Producent || '-')} | ${escapeHtml(item.Lokalizacja || '-')} | ${this.formatCurrency(item.Cena_PLN)}</small>`;
                     div.addEventListener('click', () => this.selectSuggestion(item));
                     container.appendChild(div);
                 });
@@ -1923,9 +2047,9 @@
 
                 searchInfo.innerHTML = `
                     <i class="fas fa-crosshairs mr-2"></i>
-                    <strong>Wybrany rekord:</strong> ${item.Przedmiot || '-'}
-                    ${item.Numer_katalogowy ? `(${item.Numer_katalogowy})` : ''}
-                    ${item.Lokalizacja ? `- lokalizacja: ${item.Lokalizacja}` : ''}
+                    <strong>Wybrany rekord:</strong> ${escapeHtml(item.Przedmiot || '-')}
+                    ${item.Numer_katalogowy ? `(${escapeHtml(item.Numer_katalogowy)})` : ''}
+                    ${item.Lokalizacja ? `- lokalizacja: ${escapeHtml(item.Lokalizacja)}` : ''}
                 `;
                 searchInfo.style.display = 'block';
 
@@ -2175,11 +2299,21 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
 
                 // Clean up the response and parse JSON
                 let cleanedResponse = aiResponse.trim();
-                if (cleanedResponse.startsWith('```json')) {
-                    cleanedResponse = cleanedResponse.replace(/```json\n?/, '').replace(/```$/, '');
+                if (cleanedResponse.startsWith('```')) {
+                    cleanedResponse = cleanedResponse.replace(/^```(?:json)?\n?/, '').replace(/```\s*$/, '');
                 }
 
-                return JSON.parse(cleanedResponse);
+                try {
+                    return JSON.parse(cleanedResponse);
+                } catch (e) {
+                    // Fallback: wytnij pierwszą tablicę JSON, gdy AI dodało komentarz wokół
+                    const first = cleanedResponse.indexOf('[');
+                    const last = cleanedResponse.lastIndexOf(']');
+                    if (first !== -1 && last > first) {
+                        return JSON.parse(cleanedResponse.slice(first, last + 1));
+                    }
+                    throw new Error('AI zwróciło odpowiedź w nieoczekiwanym formacie (to nie jest JSON)');
+                }
             }
 
             displayAIResults(results, location) {
@@ -2196,25 +2330,42 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                     console.log(`📍 Auto-dodano nową lokalizację: ${location}`);
                 }
 
-                pendingAIItems = results.map(item => ({
-                    ...item,
-                    Budynek: 'Sklep',
-                    Lokalizacja: location,
-                    Data_dodania: new Date().toISOString().split('T')[0],
-                    Status: 'aktywny'
-                }));
+                // Normalizuj dane z AI - model potrafi zwrócić braki, liczby jako teksty
+                // albo przecinki dziesiętne; bez tego w bazie lądowały "undefined"
+                pendingAIItems = results
+                    .filter(item => item && String(item.Przedmiot || '').trim())
+                    .map(item => ({
+                        Przedmiot: String(item.Przedmiot || '').trim(),
+                        Producent: String(item.Producent || '').trim(),
+                        Numer_katalogowy: String(item.Numer_katalogowy || '').trim(),
+                        Numery_zamienne: String(item.Numery_zamienne || '').trim(),
+                        Kategoria: String(item.Kategoria || '').trim(),
+                        Ilosc: parseFloat(String(item.Ilosc === undefined || item.Ilosc === null ? 1 : item.Ilosc).replace(',', '.')) || 1,
+                        Jednostka: String(item.Jednostka || 'szt').trim() || 'szt',
+                        Cena_PLN: parseFloat(String(item.Cena_PLN === undefined || item.Cena_PLN === null ? 0 : item.Cena_PLN).replace(',', '.')) || 0,
+                        Notatki: String(item.Notatki || '').trim(),
+                        Budynek: 'Sklep',
+                        Lokalizacja: location,
+                        Data_dodania: new Date().toISOString().split('T')[0],
+                        Status: 'aktywny'
+                    }));
+
+                if (pendingAIItems.length === 0) {
+                    this.showError('AI nie zwróciło żadnego przedmiotu z nazwą - popraw tekst i spróbuj ponownie');
+                    return;
+                }
 
                 const resultsHTML = pendingAIItems.map((item, index) => `
                     <div class="border border-gray-200 rounded p-3 mb-2">
-                        <div class="font-semibold text-green-700">${item.Przedmiot}</div>
+                        <div class="font-semibold text-green-700">${escapeHtml(item.Przedmiot)}</div>
                         <div class="text-sm text-gray-600 grid grid-cols-2 gap-2 mt-1">
-                            <div><strong>Producent:</strong> ${item.Producent || '-'}</div>
-                            <div><strong>Nr kat.:</strong> ${item.Numer_katalogowy || '-'}</div>
-                            <div><strong>Ilość:</strong> ${item.Ilosc} ${item.Jednostka}</div>
+                            <div><strong>Producent:</strong> ${escapeHtml(item.Producent || '-')}</div>
+                            <div><strong>Nr kat.:</strong> ${escapeHtml(item.Numer_katalogowy || '-')}</div>
+                            <div><strong>Ilość:</strong> ${item.Ilosc} ${escapeHtml(item.Jednostka)}</div>
                             <div><strong>Cena:</strong> ${this.formatCurrency(item.Cena_PLN)}</div>
-                            <div><strong>Kategoria:</strong> ${item.Kategoria}</div>
-                            <div><strong>Lokalizacja:</strong> ${item.Lokalizacja}</div>
-                            ${item.Notatki ? `<div class="col-span-2"><strong>Notatki:</strong> ${item.Notatki}</div>` : ''}
+                            <div><strong>Kategoria:</strong> ${escapeHtml(item.Kategoria || '-')}</div>
+                            <div><strong>Lokalizacja:</strong> ${escapeHtml(item.Lokalizacja)}</div>
+                            ${item.Notatki ? `<div class="col-span-2"><strong>Notatki:</strong> ${escapeHtml(item.Notatki)}</div>` : ''}
                         </div>
                     </div>
                 `).join('');
@@ -2229,12 +2380,12 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                     return;
                 }
 
-                const maxId = currentData.length > 0 ? Math.max(...currentData.map(item => item.ID)) : 0;
-                
-                pendingAIItems.forEach((item, index) => {
+                let nextId = this.getMaxId();
+
+                pendingAIItems.forEach((item) => {
                     currentData.push({
                         ...item,
-                        ID: maxId + index + 1
+                        ID: ++nextId
                     });
                 });
 
@@ -2267,23 +2418,28 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 reader.onload = (e) => {
                     try {
                         const csv = e.target.result;
-                        const lines = csv.split('\n').filter(line => line.trim());
-                        
-                        const headers = this.parseCSVLine(lines[0]).map(h => h.trim().replace(/"/g, ''));
-                        const dataLines = lines.slice(1);
-                        
+                        const rows = this.parseCSV(csv);
+
+                        if (rows.length === 0) {
+                            this.showError('Plik CSV jest pusty');
+                            return;
+                        }
+
+                        const headers = rows[0].map(h => h.trim());
+                        const dataRows = rows.slice(1);
+
                         let totalValue = 0;
                         let validRows = 0;
-                        
-                        for (let i = 0; i < Math.min(dataLines.length, 10); i++) {
-                            const values = this.parseCSVLine(dataLines[i]);
+
+                        for (let i = 0; i < Math.min(dataRows.length, 10); i++) {
+                            const values = dataRows[i];
                             if (values.length === headers.length) {
                                 validRows++;
                                 const priceIndex = headers.indexOf('Cena_PLN');
                                 const quantityIndex = headers.indexOf('Ilosc');
                                 if (priceIndex >= 0 && quantityIndex >= 0) {
-                                    const price = parseFloat(values[priceIndex].replace(/"/g, '')) || 0;
-                                    const quantity = parseInt(values[quantityIndex].replace(/"/g, '')) || 0;
+                                    const price = this.parsePrice(values[priceIndex]);
+                                    const quantity = parseFloat(String(values[quantityIndex]).replace(',', '.')) || 0;
                                     totalValue += price * quantity;
                                 }
                             }
@@ -2291,12 +2447,12 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
 
                         document.getElementById('importStats').innerHTML = `
                             <strong>Podgląd pliku:</strong><br>
-                            Nazwa: ${file.name}<br>
+                            Nazwa: ${escapeHtml(file.name)}<br>
                             Rozmiar: ${(file.size / 1024).toFixed(1)} KB<br>
-                            Wierszy: ${dataLines.length}<br>
+                            Wierszy: ${dataRows.length}<br>
                             Kolumn: ${headers.length}<br>
                             Przykładowa wartość (10 pierwszych): ${totalValue.toFixed(2)} PLN<br>
-                            <small>Kolumny: ${headers.join(', ')}</small>
+                            <small>Kolumny: ${escapeHtml(headers.join(', '))}</small>
                         `;
 
                         document.getElementById('importPreview').style.display = 'block';
@@ -2326,22 +2482,22 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                     try {
                         console.log('🔄 V10 CSV Import rozpoczęty');
                         const csv = e.target.result;
-                        const lines = csv.split('\n').filter(line => line.trim());
-                        
-                        if (lines.length < 2) {
+                        const rows = this.parseCSV(csv);
+
+                        if (rows.length < 2) {
                             this.showError('Plik CSV musi zawierać nagłówki i co najmniej jeden wiersz danych');
                             return;
                         }
 
-                        const headers = this.parseCSVLine(lines[0]).map(h => h.trim().replace(/"/g, ''));
+                        const headers = rows[0].map(h => h.trim());
                         const data = [];
                         let skippedRows = 0;
                         const importedLocations = new Set();
 
                         console.log('📋 Nagłówki CSV:', headers);
 
-                        for (let i = 1; i < lines.length; i++) {
-                            const values = this.parseCSVLine(lines[i]);
+                        for (let i = 1; i < rows.length; i++) {
+                            const values = rows[i];
                             if (values.length !== headers.length) {
                                 skippedRows++;
                                 continue;
@@ -2349,14 +2505,17 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
 
                             const item = {};
                             headers.forEach((header, index) => {
-                                let value = values[index].trim().replace(/^"|"$/g, '');
-                                
-                                if (header === 'ID' || header === 'Ilosc') {
+                                let value = String(values[index]).trim();
+
+                                if (header === 'ID') {
                                     value = parseInt(value) || 0;
+                                } else if (header === 'Ilosc') {
+                                    // parseFloat zamiast parseInt - jednostki kg/l/m mają ilości dziesiętne
+                                    value = parseFloat(value.replace(',', '.')) || 0;
                                 } else if (header === 'Cena_PLN') {
                                     value = this.parsePrice(value);
                                 }
-                                
+
                                 item[header] = value;
                             });
 
@@ -2381,19 +2540,36 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                         const totalValue = data.filter(item => item.Status === 'aktywny')
                             .reduce((sum, item) => {
                                 const price = parseFloat(item.Cena_PLN) || 0;
-                                const quantity = parseInt(item.Ilosc) || 0;
+                                const quantity = parseFloat(item.Ilosc) || 0;
                                 return sum + (price * quantity);
                             }, 0);
 
                         console.log(`💰 Obliczona wartość importu: ${totalValue.toFixed(2)} PLN`);
 
                         if (importMode === 'replace') {
+                            // Zachowaj ID z CSV, ale brakujące lub zduplikowane nadaj od nowa -
+                            // CSV bez kolumny ID psuł wcześniej przyciski Edytuj/Usuń (ID=undefined)
+                            const usedIds = new Set();
+                            let maxSeen = 0;
+                            data.forEach(item => {
+                                const idNum = Number(item.ID) || 0;
+                                if (idNum > 0 && !usedIds.has(idNum)) {
+                                    item.ID = idNum;
+                                    usedIds.add(idNum);
+                                    if (idNum > maxSeen) maxSeen = idNum;
+                                } else {
+                                    item.ID = null;
+                                }
+                            });
+                            data.forEach(item => {
+                                if (item.ID === null) item.ID = ++maxSeen;
+                            });
                             currentData = data;
                             console.log('🔄 Zastąpiono wszystkie dane');
                         } else {
-                            const maxId = currentData.length > 0 ? Math.max(...currentData.map(item => item.ID)) : 0;
-                            data.forEach((item, index) => {
-                                item.ID = maxId + index + 1;
+                            let nextId = this.getMaxId();
+                            data.forEach(item => {
+                                item.ID = ++nextId;
                                 currentData.push(item);
                             });
                             console.log('➕ Dodano do istniejących danych');
@@ -2408,7 +2584,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                         this.loadFilterOptions();
                         this.showDebugInfo();
 
-                        this.showSuccess(`✅ Zaimportowano ${data.length} przedmiotów i ${importedLocations.size} lokalizacji. Wartość: ${totalValue.toFixed(2)} PLN`);
+                        this.showSuccess(`✅ Zaimportowano ${data.length} przedmiotów i ${importedLocations.size} lokalizacji.${skippedRows > 0 ? ` Pominięto wierszy: ${skippedRows}.` : ''} Wartość: ${totalValue.toFixed(2)} PLN`);
                         this.closeImportModal();
 
                     } catch (error) {
@@ -2439,6 +2615,51 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 
                 const parsed = parseFloat(cleanValue) || 0;
                 return parsed;
+            }
+
+            // Pełny parser CSV (cały tekst naraz) - obsługuje pola w cudzysłowach
+            // z przecinkami, podwojonymi cudzysłowami ("") i NOWYMI LINIAMI w środku.
+            // Wcześniejsze dzielenie pliku po \n gubiło wiersze z wielolinijkowymi
+            // notatkami, które eksport CSV poprawnie zapisywał.
+            parseCSV(text) {
+                const rows = [];
+                let row = [];
+                let field = '';
+                let inQuotes = false;
+
+                for (let i = 0; i < text.length; i++) {
+                    const c = text[i];
+
+                    if (inQuotes) {
+                        if (c === '"') {
+                            if (text[i + 1] === '"') { field += '"'; i++; }
+                            else { inQuotes = false; }
+                        } else {
+                            field += c;
+                        }
+                    } else if (c === '"') {
+                        inQuotes = true;
+                    } else if (c === ',') {
+                        row.push(field);
+                        field = '';
+                    } else if (c === '\n' || c === '\r') {
+                        if (c === '\r' && text[i + 1] === '\n') i++;
+                        row.push(field);
+                        field = '';
+                        // Pomiń całkowicie puste wiersze
+                        if (row.length > 1 || String(row[0]).trim() !== '') rows.push(row);
+                        row = [];
+                    } else {
+                        field += c;
+                    }
+                }
+
+                if (field !== '' || row.length > 0) {
+                    row.push(field);
+                    if (row.length > 1 || String(row[0]).trim() !== '') rows.push(row);
+                }
+
+                return rows;
             }
 
             parseCSVLine(line) {
@@ -2594,7 +2815,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 item.Numer_katalogowy = document.getElementById('editNumerKat').value.trim();
                 item.Numery_zamienne = document.getElementById('editNumeryZamienne').value.trim();
                 item.Kategoria = document.getElementById('editKategoria').value.trim();
-                item.Ilosc = parseInt(document.getElementById('editIlosc').value) || 0;
+                item.Ilosc = parseFloat(document.getElementById('editIlosc').value) || 0;
                 item.Jednostka = document.getElementById('editJednostka').value;
                 item.Cena_PLN = parseFloat(document.getElementById('editCena').value) || 0;
                 item.Lokalizacja = document.getElementById('editLokalizacja').value;
