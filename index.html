@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inwentaryzacja Magazynu - V10A</title>
+    <title>Inwentaryzacja Magazynu - V11</title>
     
     <!-- PWA Meta Tags for Mobile Install -->
     <meta name="theme-color" content="#3b82f6">
@@ -15,10 +15,10 @@
     
     <!-- Icons for PWA -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%233b82f6'/><text y='.9em' x='.1em' font-size='80' fill='white'>📦</text></svg>">
-    
-    <!-- Manifest for PWA -->
-    <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Inwentaryzacja Magazynu&quot;,&quot;short_name&quot;:&quot;Inwentaryzacja&quot;,&quot;description&quot;:&quot;System zarządzania magazynem z AI&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%23f3f4f6&quot;,&quot;theme_color&quot;:&quot;%233b82f6&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%233b82f6'/><text y='.9em' x='.1em' font-size='150' fill='white'>📦</text></svg>&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;},{&quot;src&quot;:&quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%233b82f6'/><text y='.9em' x='.1em' font-size='400' fill='white'>📦</text></svg>&quot;,&quot;sizes&quot;:&quot;512x512&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Manifest PWA w osobnym pliku – przeglądarki nie przyjmują manifestu wklejonego jako data: -->
+    <link rel="manifest" href="manifest.webmanifest">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
@@ -77,7 +77,7 @@
     <!-- Firebase SDK v10 (modular) - synchronizacja danych -->
     <script type="module">
       import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-      import { getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp }
+      import { getFirestore, doc, onSnapshot, runTransaction, serverTimestamp }
         from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
       const firebaseConfig = {
@@ -94,13 +94,12 @@
 
       const USER_DOC = 'andy';
 
-      window._firestore = db;
+      window._fbDb = db;
       window._fbInvDoc     = doc(db, 'inwentarz_data', USER_DOC);
       window._fbInvLocDoc  = doc(db, 'inwentarz_locations', USER_DOC);
       window._fbServerTimestamp = serverTimestamp;
-      window._fbSetDoc  = setDoc;
-      window._fbGetDoc  = getDoc;
       window._fbOnSnapshot = onSnapshot;
+      window._fbRunTransaction = runTransaction;
       window._firebaseReady = true;
 
       console.log('[Firebase] Inwentaryzacja SDK załadowany ✓');
@@ -130,7 +129,7 @@
         <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">
                 <i class="fas fa-boxes mr-2 text-blue-600"></i>
-                Inwentaryzacja Magazynu - V10A
+                Inwentaryzacja Magazynu - V11
             </h1>
             <p class="text-gray-600">System zarządzania zapasami z AI, ręcznym dodawaniem i lokalizacjami</p>
             <div id="aiStatusInfo" class="mt-3 text-sm text-gray-500"></div>
@@ -164,7 +163,7 @@
                     <i class="fas fa-bug mr-2"></i>Debug Info
                 </button>
                 <button id="clearBtn" class="bg-red-600 text-white p-4 rounded-lg hover:bg-red-700 transition-colors">
-                    <i class="fas fa-trash mr-2"></i>Wyczyść V10A
+                    <i class="fas fa-trash mr-2"></i>Wyczyść wszystko
                 </button>
             </div>
         </div>
@@ -183,6 +182,7 @@
                 <div class="bg-purple-50 p-4 rounded-lg">
                     <div class="text-2xl font-bold text-purple-600" id="totalValue">0 PLN</div>
                     <div class="text-sm text-gray-600">Wartość magazynu</div>
+                    <div class="text-xs text-gray-400" id="noPriceInfo"></div>
                 </div>
                 <div class="bg-yellow-50 p-4 rounded-lg">
                     <div class="text-2xl font-bold text-yellow-600" id="categories">0</div>
@@ -209,7 +209,7 @@
 
         <!-- Debug Info -->
         <div id="debugSection" class="bg-white rounded-lg shadow-lg p-6 mb-6" style="display: none;">
-            <h3 class="text-lg font-semibold mb-4">Debug Information - V10A</h3>
+            <h3 class="text-lg font-semibold mb-4">Debug Information - V11</h3>
             <div id="debugInfo" class="debug-info">Brak informacji debugowych</div>
         </div>
 
@@ -254,7 +254,7 @@
                             <td colspan="9" class="text-center p-8">
                                 <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
                                 <p class="text-gray-500">Brak danych. Kliknij "Import CSV" aby wczytać bazę danych.</p>
-                                <p class="text-sm text-gray-400 mt-2">Wersja V10A - PWA z ręcznym dodawaniem i zarządzaniem lokalizacjami</p>
+                                <p class="text-sm text-gray-400 mt-2">Wersja V11 - PWA z ręcznym dodawaniem i zarządzaniem lokalizacjami</p>
                             </td>
                         </tr>
                     </tbody>
@@ -275,7 +275,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-microphone mr-2"></i>Dodawanie głosowe - V10A (PWA)
+                    <i class="fas fa-microphone mr-2"></i>Dodawanie głosowe - V11 (PWA)
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -314,6 +314,7 @@
 
             <div id="aiResults" style="display: none;">
                 <h4 class="font-semibold mb-3">Wyniki przetwarzania AI:</h4>
+                <div id="aiWarnings" class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-3" style="display: none;"></div>
                 <div id="aiResultsList" class="bg-gray-50 p-4 rounded-lg mb-4"></div>
                 <div class="flex gap-3">
                     <button id="saveItems" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700">
@@ -327,7 +328,7 @@
             </div>
 
             <div id="processingMessage" class="text-center text-blue-600 mt-4" style="display: none;">
-                <i class="fas fa-spinner fa-spin mr-2"></i>Przetwarzanie przez DeepSeek AI...
+                <i class="fas fa-spinner fa-spin mr-2"></i>Przetwarzanie przez AI...
             </div>
         </div>
     </div>
@@ -337,7 +338,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-map-marker-alt mr-2"></i>Zarządzanie lokalizacjami - V10A
+                    <i class="fas fa-map-marker-alt mr-2"></i>Zarządzanie lokalizacjami - V11
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -371,7 +372,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-eye mr-2"></i>Przegląd przedmiotów w lokalizacji - V10A
+                    <i class="fas fa-eye mr-2"></i>Przegląd przedmiotów w lokalizacji - V11
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -420,7 +421,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-plus-circle mr-2"></i>Dodaj przedmiot ręcznie - V10A
+                    <i class="fas fa-plus-circle mr-2"></i>Dodaj przedmiot ręcznie - V11
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -449,6 +450,10 @@
                 <div>
                     <label class="block text-sm font-medium mb-1">Kategoria</label>
                     <input type="text" id="manualKategoria" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Kategoria">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Budynek</label>
+                    <input type="text" id="manualBudynek" list="buildingList" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Puste = wg lokalizacji">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Ilość</label>
@@ -509,7 +514,7 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-key mr-2"></i>Ustawienia AI - V10A
+                    <i class="fas fa-key mr-2"></i>Ustawienia AI - V11
                 </h3>
                 <span class="close">&times;</span>
             </div>
@@ -591,6 +596,10 @@
                     <input type="text" id="editKategoria" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Kategoria">
                 </div>
                 <div>
+                    <label class="block text-sm font-medium mb-1">Budynek</label>
+                    <input type="text" id="editBudynek" list="buildingList" class="w-full p-3 border border-gray-300 rounded-lg" placeholder="Budynek">
+                </div>
+                <div>
                     <label class="block text-sm font-medium mb-1">Ilość</label>
                     <input type="number" id="editIlosc" class="w-full p-3 border border-gray-300 rounded-lg" min="0" step="any" placeholder="0">
                 </div>
@@ -632,6 +641,7 @@
             </div>
 
             <input type="hidden" id="editItemId">
+            <datalist id="buildingList"></datalist>
 
             <div class="modal-actions flex justify-end gap-3 mt-6">
                 <button id="cancelEditBtn" class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700">Anuluj</button>
@@ -647,13 +657,13 @@
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold">
-                    <i class="fas fa-upload mr-2"></i>Import CSV - V10A
+                    <i class="fas fa-upload mr-2"></i>Import CSV - V11
                 </h3>
                 <span class="close">&times;</span>
             </div>
             <div class="mb-4">
-                <input type="file" id="csvFileInput" accept=".csv" class="w-full p-3 border border-gray-300 rounded-lg">
-                <p class="text-sm text-gray-500 mt-2">Wybierz plik CSV z danymi (obsługuje polskie znaki)</p>
+                <input type="file" id="csvFileInput" accept=".csv,.txt" class="w-full p-3 border border-gray-300 rounded-lg">
+                <p class="text-sm text-gray-500 mt-2">Wybierz plik CSV z danymi (z tego programu albo zapisany w Excelu – przecinki lub średniki, polskie znaki)</p>
             </div>
             <div class="mb-4">
                 <label class="block text-sm font-medium mb-2">Tryb importu:</label>
@@ -684,6 +694,7 @@
             const sessionKey = 'inwentaryzacja_logged_in';
             
             if (sessionStorage.getItem(sessionKey) === 'true') {
+                addLogoutButton();
                 app = new InventoryApp();
                 return true;
             }
@@ -728,6 +739,15 @@
             return false;
         }
         
+        // Przycisk "Wyloguj" – także po odświeżeniu strony (wcześniej wtedy znikał)
+        function addLogoutButton() {
+            const logoutBtn = document.createElement('div');
+            logoutBtn.innerHTML = '<button onclick="logout()" style="position: fixed; top: 10px; right: 10px; ' +
+                'background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; ' +
+                'cursor: pointer; z-index: 900; font-size: 12px;">Wyloguj</button>';
+            document.body.appendChild(logoutBtn);
+        }
+
         function attemptLogin() {
             const login = document.getElementById('loginInput').value;
             const password = document.getElementById('passwordInput').value;
@@ -737,12 +757,7 @@
                 document.getElementById('loginModal').remove();
                 document.querySelector('.container').style.display = 'block';
                 
-                const logoutBtn = document.createElement('div');
-                logoutBtn.innerHTML = '<button onclick="logout()" style="position: fixed; top: 10px; right: 10px; ' +
-                    'background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; ' +
-                    'cursor: pointer; z-index: 1000; font-size: 12px;">Wyloguj</button>';
-                document.body.appendChild(logoutBtn);
-                
+                addLogoutButton();
                 app = new InventoryApp();
             } else {
                 document.getElementById('loginError').style.display = 'block';
@@ -756,11 +771,11 @@
             location.reload();
         }
 
-        // Główny kod aplikacji - V9 specific
-            
-        // Global variables - V9 specific
+        // Główny kod aplikacji
+
+        // Zmienne globalne
         let currentData = [];
-        let filteredData = [];
+        let activeSearchQuery = '';
         let isSearchActive = false;
         let currentPage = 1;
         let itemsPerPage = 50;
@@ -781,7 +796,7 @@
             apiKey: DEEPSEEK_API_KEY
         };
 
-        // V10 Storage keys - separate from previous versions
+        // Klucze pamięci lokalnej – te same co w V10/V10A, żeby dane przeszły do nowej wersji
         const STORAGE_KEY = 'inventoryData_v10_andy';
         const LOCATIONS_KEY = 'locations_v10_andy';
 
@@ -821,170 +836,586 @@
             }
         });
 
-        // Service Worker registration (basic PWA functionality)
-        if ('serviceWorker' in navigator) {
+        // Service Worker (plik sw.js obok strony) – pozwala zainstalować program i otworzyć go
+        // bez internetu. Wcześniejsza rejestracja z adresu blob: była odrzucana przez przeglądarki.
+        if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
             window.addEventListener('load', () => {
-                // Create a simple service worker for caching
-                const swCode = `
-                    const CACHE_NAME = 'inwentaryzacja-v9-cache';
-                    const urlsToCache = [];
-                    
-                    self.addEventListener('install', (event) => {
-                        console.log('📦 Service Worker installed');
-                        self.skipWaiting();
-                    });
-                    
-                    self.addEventListener('activate', (event) => {
-                        console.log('✅ Service Worker activated');
-                        event.waitUntil(clients.claim());
-                    });
-                    
-                    self.addEventListener('fetch', (event) => {
-                        // Let browser handle all requests (no aggressive caching)
-                        return;
-                    });
-                `;
-                
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                
-                navigator.serviceWorker.register(swUrl)
-                    .then((registration) => {
-                        console.log('✅ SW registered:', registration);
-                    })
+                navigator.serviceWorker.register('sw.js')
+                    .then(() => navigator.serviceWorker.ready)
+                    // Pobierz stronę jeszcze raz przez service workera, żeby trafiła do pamięci offline
+                    .then(() => fetch(location.href).catch(() => {}))
                     .catch((error) => {
-                        console.log('❌ SW registration failed:', error);
+                        console.log('Service Worker niedostępny (brak pliku sw.js obok strony?):', error.message);
                     });
             });
         }
 
 
-        // =================== FIREBASE SYNC - INWENTARYZACJA ===================
-        let _fbInvSyncTimeout = null;
-        let _fbInvListenerActive = false;
+        // =================== SYNCHRONIZACJA Z CHMURĄ (Firebase) ===================
+        // Zasady działania:
+        //  - dane lokalne (localStorage) zapisują się od razu i są pokazywane od razu,
+        //  - każda lokalna zmiana trafia na listę "oczekujących" (PENDING_KEY) i znika z niej
+        //    dopiero po potwierdzonym zapisie w chmurze – zamknięcie karty, brak internetu
+        //    albo błąd zapisu nie gubią już zmian,
+        //  - zapis do chmury jest transakcją: czytamy aktualny stan chmury, nakładamy na
+        //    niego tylko własne zmiany i dopiero wtedy zapisujemy. Dzięki temu dwa urządzenia
+        //    nie nadpisują sobie nawzajem całej bazy,
+        //  - dane przychodzące z chmury są łączone z lokalnymi zmianami, a nie wstawiane
+        //    w ich miejsce.
+        const PENDING_KEY = 'inventoryPending_v11_andy';
+        const CLIENT_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        // Dokument Firestore mieści 1 MiB. Powyżej tego progu (bajty JSON) baza jest
+        // zapisywana w chmurze w postaci skompresowanej (gzip), co daje kilkukrotny zapas.
+        const FB_COMPRESS_THRESHOLD = 900000;
+        const FB_MARKER = 'fmt2';
 
-        // Zapisz dane inwentarza do Firebase (debounce 2s)
-        function fbSaveInventory() {
-            if (!window._firebaseReady || !window._fbInvDoc) return;
-            if (_fbInvSyncTimeout) clearTimeout(_fbInvSyncTimeout);
-            _fbInvSyncTimeout = setTimeout(async function() {
-                try {
-                    await window._fbSetDoc(window._fbInvDoc, {
-                        items: currentData || [],
-                        updatedAt: window._fbServerTimestamp()
-                    });
-                    console.log('[Firebase] Inwentarz zsynchronizowany ✓');
-                    fbShowStatus('✓ Zsynchronizowano', '#28a745');
-                } catch(e) {
-                    console.error('[Firebase] Błąd zapisu inwentarza:', e);
-                    fbShowStatus('⚠ Błąd sync', '#dc3545');
-                }
-            }, 2000);
+        // { seq, items: { id: { k: 'new'|'mod'|'del', s } }, full, locAdd: { nazwa: s }, locDel: { nazwa: s }, locFull }
+        let pending = null;
+        let _migration = false;
+        let _syncTimer = null;
+        let _syncRunning = false;
+        let _syncError = null;
+        let _fbListening = false;
+        let _cloudReady = false;
+        let _locReady = false;
+        let _lastWriteIds = [];
+        let _deferred = { inv: null, loc: null };
+        let _invTicket = 0;
+
+        function own(obj, key) {
+            return Object.prototype.hasOwnProperty.call(obj, key);
         }
 
-        // Zapisz lokalizacje do Firebase
-        async function fbSaveLocations() {
-            if (!window._firebaseReady || !window._fbInvLocDoc) return;
+        function emptyPending() {
+            return { seq: 0, items: {}, full: 0, locAdd: {}, locDel: {}, locFull: 0 };
+        }
+
+        function loadPending() {
+            const raw = localStorage.getItem(PENDING_KEY);
+            // Pierwsze uruchomienie tej wersji na danych ze starszej wersji programu
+            _migration = raw === null && currentData.length > 0;
+            pending = emptyPending();
+            if (raw) {
+                try { pending = { ...emptyPending(), ...JSON.parse(raw) }; }
+                catch (e) { console.error('Uszkodzona lista zmian do wysłania:', e); }
+            }
+            if (raw === null) savePending();
+        }
+
+        function savePending() {
+            try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); }
+            catch (e) { console.error('Nie udało się zapisać listy zmian do wysłania:', e); }
+        }
+
+        function itemsPending() {
+            return !!pending.full || Object.keys(pending.items).length > 0;
+        }
+
+        function locationsPending() {
+            return !!pending.locFull || Object.keys(pending.locAdd).length > 0 || Object.keys(pending.locDel).length > 0;
+        }
+
+        function pendingCount() {
+            return Object.keys(pending.items).length + Object.keys(pending.locAdd).length +
+                Object.keys(pending.locDel).length + (pending.full ? 1 : 0) + (pending.locFull ? 1 : 0);
+        }
+
+        // Zaznacz pozycję jako zmienioną lokalnie: 'new' (dodana), 'mod' (edytowana), 'del' (skasowana na stałe)
+        function markItem(id, kind, skipSave) {
+            const key = String(id);
+            const prev = pending.items[key];
+            // Pozycja, której chmura jeszcze nie widziała, zostaje "nowa" także po edycji
+            if (prev && prev.k === 'new' && kind === 'mod') kind = 'new';
+            pending.items[key] = { k: kind, s: ++pending.seq };
+            if (!skipSave) savePending();
+        }
+
+        // Cała baza została podmieniona lokalnie (import "Zastąp", "Wyczyść") – lokalna wersja wygrywa
+        function markFull() {
+            pending.items = {};
+            pending.full = ++pending.seq;
+            savePending();
+        }
+
+        function markLocation(name, op) {
+            const s = ++pending.seq;
+            if (op === 'add') { delete pending.locDel[name]; pending.locAdd[name] = s; }
+            else { delete pending.locAdd[name]; pending.locDel[name] = s; }
+            savePending();
+        }
+
+        function markLocationsFull() {
+            pending.locAdd = {};
+            pending.locDel = {};
+            pending.locFull = ++pending.seq;
+            savePending();
+        }
+
+        function sameItemContent(a, b) {
+            const strip = (o) => {
+                const c = { ...o };
+                delete c.ID;
+                return JSON.stringify(c, Object.keys(c).sort());
+            };
+            return strip(a) === strip(b);
+        }
+
+        // Nakłada lokalne zmiany (pend) na stan z chmury (remote). Niczego nie modyfikuje.
+        // remap: { stareID: noweID } dla lokalnie dodanych pozycji, których numer zajęło
+        // w międzyczasie inne urządzenie.
+        function mergeItems(remote, local, pend) {
+            if (pend.full) return { items: local.slice(), remap: {} };
+
+            const result = remote.slice();
+            const index = new Map();
+            result.forEach((it, i) => index.set(String(it.ID), i));
+            const localById = new Map(local.map(it => [String(it.ID), it]));
+            const removed = new Set();
+            const remap = {};
+            let maxId = 0;
+            remote.concat(local).forEach(it => { maxId = Math.max(maxId, Number(it.ID) || 0); });
+
+            Object.keys(pend.items).forEach(key => {
+                const entry = pend.items[key];
+                if (entry.k === 'del') {
+                    if (index.has(key)) removed.add(index.get(key));
+                    return;
+                }
+                const mine = localById.get(key);
+                if (!mine) return;
+                if (!index.has(key)) {
+                    index.set(key, result.length);
+                    result.push(mine);
+                    return;
+                }
+                const pos = index.get(key);
+                if (entry.k === 'new' && !sameItemContent(result[pos], mine)) {
+                    const copy = { ...mine, ID: ++maxId };
+                    remap[key] = copy.ID;
+                    result.push(copy);
+                    return;
+                }
+                result[pos] = mine;
+            });
+
+            return { items: result.filter((_, i) => !removed.has(i)), remap };
+        }
+
+        function mergeLocations(remote, local, pend) {
+            if (pend.locFull) return local.slice();
+            const result = remote.filter(name => !own(pend.locDel, name));
+            Object.keys(pend.locAdd).forEach(name => {
+                if (!result.includes(name)) result.push(name);
+            });
+            return result;
+        }
+
+        async function gzipToBase64(text) {
+            const stream = new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
+            const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+            let bin = '';
+            for (let i = 0; i < bytes.length; i += 0x8000) {
+                bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+            }
+            return btoa(bin);
+        }
+
+        async function gunzipFromBase64(b64) {
+            const bin = atob(b64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+            return await new Response(stream).text();
+        }
+
+        // Odczyt listy pozycji z dokumentu chmury (format zwykły albo skompresowany)
+        async function readCloudItems(data) {
+            if (data.fmt === 2 && typeof data.itemsGz === 'string') {
+                if (typeof DecompressionStream === 'undefined') {
+                    throw new Error('Ta przeglądarka nie odczyta skompresowanej bazy – zaktualizuj przeglądarkę');
+                }
+                return { items: JSON.parse(await gunzipFromBase64(data.itemsGz)), legacyOverwrite: false };
+            }
+            const items = Array.isArray(data.items) ? data.items.filter(Boolean) : [];
+            // Znacznik bez pola fmt oznacza, że skompresowaną bazę nadpisała stara wersja programu
+            return {
+                items: items.filter(it => it._marker !== FB_MARKER),
+                legacyOverwrite: items.some(it => it._marker === FB_MARKER)
+            };
+        }
+
+        async function buildCloudDoc(items, writeId) {
+            const json = JSON.stringify(items);
+            const base = { updatedAt: window._fbServerTimestamp(), writeId: writeId, count: items.length };
+            if (new Blob([json]).size <= FB_COMPRESS_THRESHOLD) {
+                return { ...base, fmt: 1, items: items };
+            }
+            if (typeof CompressionStream === 'undefined') {
+                throw new Error('Baza jest za duża na zapis bez kompresji, a ta przeglądarka jej nie obsługuje');
+            }
+            return {
+                ...base,
+                fmt: 2,
+                itemsGz: await gzipToBase64(json),
+                // Starsze wersje programu czytają tylko pole "items" – zobaczą tę jedną informację
+                items: [{
+                    ID: 0, _marker: FB_MARKER, Status: 'usunięty', Ilosc: 0, Cena_PLN: 0,
+                    Przedmiot: 'ZAKTUALIZUJ PROGRAM – baza jest zapisana w nowym formacie (V11)'
+                }]
+            };
+        }
+
+        function reconcileItems(cloud, local, pend) {
+            if (pend.full) return { items: local.slice(), remap: {}, forceFull: false };
+            if (cloud.legacyOverwrite) {
+                // Stara wersja programu nadpisała chmurę: zostaje baza lokalna plus to,
+                // co stara wersja zdążyła dopisać
+                let maxId = local.reduce((max, it) => Math.max(max, Number(it.ID) || 0), 0);
+                const extras = cloud.items.map(it => ({ ...it, ID: ++maxId }));
+                return { items: local.concat(extras), remap: {}, forceFull: true };
+            }
+            return { ...mergeItems(cloud.items, local, pend), forceFull: false };
+        }
+
+        // Wstaw wynik połączenia jako bieżące dane i odśwież ekran, jeśli coś się zmieniło
+        function setItemsFromSync(items) {
+            const before = JSON.stringify(currentData);
+            const after = JSON.stringify(items);
+            currentData = items;
+            if (before === after) return;
+            try { localStorage.setItem(STORAGE_KEY, after); }
+            catch (e) { console.error('Błąd zapisu lokalnego:', e); }
+            if (window._appInstance) {
+                try { window._appInstance.refreshAll(); } catch (e) { console.error(e); }
+            }
+        }
+
+        function setLocationsFromSync(list) {
+            const before = JSON.stringify(locations);
+            const after = JSON.stringify(list);
+            locations = list;
+            if (before === after) return;
+            try { localStorage.setItem(LOCATIONS_KEY, after); }
+            catch (e) { console.error('Błąd zapisu lokalnego:', e); }
+            if (window._appInstance) {
+                try { window._appInstance.refreshAll(); } catch (e) { console.error(e); }
+            }
+        }
+
+        async function processInvSnapshot(snap) {
+            const ticket = ++_invTicket;
             try {
-                await window._fbSetDoc(window._fbInvLocDoc, {
-                    locations: locations || [],
-                    updatedAt: window._fbServerTimestamp()
+                if (!snap.exists()) {
+                    // Chmura jest pusta (pierwsze uruchomienie) – wyślij bazę lokalną
+                    _cloudReady = true;
+                    _migration = false;
+                    if (currentData.length > 0 && !pending.full) markFull();
+                } else {
+                    const data = snap.data();
+                    if (_lastWriteIds.includes(data.writeId)) {
+                        _cloudReady = true;
+                        _migration = false;
+                    } else {
+                        const cloud = await readCloudItems(data);
+                        if (ticket !== _invTicket) return; // w międzyczasie przyszła nowsza wersja
+                        applyCloudItems(cloud);
+                    }
+                }
+                _syncError = null;
+            } catch (e) {
+                console.error('[Firebase] Błąd odczytu danych z chmury:', e);
+                _syncError = e;
+            }
+            if (_cloudReady && hasPending()) scheduleSync(300);
+            renderSyncStatus();
+        }
+
+        function applyCloudItems(cloud) {
+            let rescued = 0;
+            // Jednorazowo po przejściu ze starej wersji: pozycje o numerach wyższych niż
+            // wszystko w chmurze powstały lokalnie i nie zdążyły się wysłać – zachowaj je.
+            if (!_cloudReady && _migration && !pending.full && !cloud.legacyOverwrite && cloud.items.length > 0) {
+                const maxRemote = cloud.items.reduce((max, it) => Math.max(max, Number(it.ID) || 0), 0);
+                currentData.forEach(it => {
+                    if ((Number(it.ID) || 0) > maxRemote) { markItem(it.ID, 'new', true); rescued++; }
                 });
-                console.log('[Firebase] Lokalizacje zsynchronizowane ✓');
-            } catch(e) {
-                console.error('[Firebase] Błąd zapisu lokalizacji:', e);
+                if (rescued) savePending();
+            }
+            _cloudReady = true;
+            _migration = false;
+
+            const res = reconcileItems(cloud, currentData, pending);
+            if (res.forceFull) markFull();
+            Object.keys(res.remap).forEach(oldId => {
+                const entry = pending.items[oldId];
+                delete pending.items[oldId];
+                if (entry) pending.items[String(res.remap[oldId])] = entry;
+            });
+            if (Object.keys(res.remap).length) savePending();
+            setItemsFromSync(res.items);
+
+            if (rescued && window._appInstance) {
+                window._appInstance.showSuccess('Odzyskano ' + rescued + ' lokalnych pozycji, których nie było w chmurze');
+            }
+            if (res.forceFull && window._appInstance) {
+                window._appInstance.showError('Starsza wersja programu nadpisała dane w chmurze – przywracam bazę z tego urządzenia. Zaktualizuj program na pozostałych urządzeniach.');
             }
         }
 
-        // Wczytaj dane z Firebase przy starcie
-        async function fbLoadInventory() {
-            if (!window._firebaseReady || !window._fbInvDoc) return;
+        function processLocSnapshot(snap) {
             try {
-                fbShowStatus('⟳ Ładowanie z chmury...', '#007bff');
-
-                // Wczytaj przedmioty
-                const snap = await window._fbGetDoc(window._fbInvDoc);
-                if (snap.exists() && snap.data().items && snap.data().items.length > 0) {
-                    currentData = snap.data().items;
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
-                    console.log('[Firebase] Wczytano ' + currentData.length + ' przedmiotów z chmury ✓');
-                    fbShowStatus('✓ Dane z chmury (' + currentData.length + ' poz.)', '#28a745');
-                } else {
-                    // Brak w Firebase - wyślij lokalne
-                    const local = localStorage.getItem(STORAGE_KEY);
-                    if (local) {
-                        currentData = JSON.parse(local);
-                        fbSaveInventory();
-                        console.log('[Firebase] Brak w chmurze, wysyłam lokalne...');
-                    }
-                    fbShowStatus('☁ Inicjalizacja chmury...', '#ffc107');
+                _locReady = true;
+                if (!snap.exists() || !Array.isArray(snap.data().locations)) {
+                    if (locations.length > 0 && !pending.locFull) markLocationsFull();
+                } else if (!_lastWriteIds.includes(snap.data().writeId)) {
+                    setLocationsFromSync(mergeLocations(snap.data().locations, locations, pending));
                 }
-
-                // Wczytaj lokalizacje
-                const locSnap = await window._fbGetDoc(window._fbInvLocDoc);
-                if (locSnap.exists() && locSnap.data().locations) {
-                    locations = locSnap.data().locations;
-                    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
-                    console.log('[Firebase] Wczytano ' + locations.length + ' lokalizacji z chmury ✓');
-                } else {
-                    const localLoc = localStorage.getItem(LOCATIONS_KEY);
-                    if (localLoc) {
-                        locations = JSON.parse(localLoc);
-                        fbSaveLocations();
-                    }
-                }
-
-            } catch(e) {
-                console.error('[Firebase] Błąd wczytywania:', e);
-                fbShowStatus('⚠ Offline (lokalne dane)', '#ffc107');
-                // Fallback do localStorage
-                const local = localStorage.getItem(STORAGE_KEY);
-                if (local) currentData = JSON.parse(local);
-                const localLoc = localStorage.getItem(LOCATIONS_KEY);
-                if (localLoc) locations = JSON.parse(localLoc);
+            } catch (e) {
+                console.error('[Firebase] Błąd odczytu lokalizacji z chmury:', e);
             }
+            if (hasPending()) scheduleSync(300);
+            renderSyncStatus();
         }
 
-        // Nasłuch na zmiany z innych urządzeń
-        function fbStartListener() {
-            if (_fbInvListenerActive || !window._firebaseReady) return;
-            _fbInvListenerActive = true;
-            let firstCall = true;
+        function hasPending() {
+            return itemsPending() || locationsPending();
+        }
+
+        // Nasłuch zmian w chmurze (pierwsze wywołanie = wczytanie danych przy starcie)
+        function fbStartListeners() {
+            if (_fbListening || !window._firebaseReady) return;
+            _fbListening = true;
             window._fbOnSnapshot(window._fbInvDoc, function(snap) {
-                if (firstCall) { firstCall = false; return; }
-                if (!snap.exists() || !snap.data().items) return;
-                currentData = snap.data().items;
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
-                console.log('[Firebase] Dane zaktualizowane z innego urządzenia ✓');
-                fbShowStatus('↓ Zaktualizowano z chmury', '#17a2b8');
-                // Odśwież UI
-                if (window._appInstance) {
-                    try {
-                        window._appInstance.displayInventoryTable();
-                        window._appInstance.updateStats();
-                        window._appInstance.loadFilterOptions();
-                    } catch(e) {}
-                }
+                if (snap.metadata && snap.metadata.hasPendingWrites) return;
+                // W trakcie własnego zapisu odłóż obsługę – po zapisie stan i tak będzie nowszy
+                if (_syncRunning) { _deferred.inv = snap; return; }
+                processInvSnapshot(snap);
+            }, function(err) {
+                console.error('[Firebase] Błąd nasłuchu danych:', err);
+                _syncError = err;
+                renderSyncStatus();
+            });
+            window._fbOnSnapshot(window._fbInvLocDoc, function(snap) {
+                if (snap.metadata && snap.metadata.hasPendingWrites) return;
+                if (_syncRunning) { _deferred.loc = snap; return; }
+                processLocSnapshot(snap);
+            }, function(err) {
+                console.error('[Firebase] Błąd nasłuchu lokalizacji:', err);
             });
         }
 
-        // Wskaźnik statusu Firebase
-        function fbShowStatus(msg, color) {
+        // Zaplanuj wysłanie zmian (domyślnie 2 s po ostatniej zmianie)
+        function scheduleSync(delay) {
+            clearTimeout(_syncTimer);
+            if (window._firebaseReady) {
+                _syncTimer = setTimeout(syncNow, delay === undefined ? 2000 : delay);
+            }
+            renderSyncStatus();
+        }
+
+        async function syncNow() {
+            clearTimeout(_syncTimer);
+            if (!window._firebaseReady || !pending || !hasPending() || _syncRunning) {
+                renderSyncStatus();
+                return;
+            }
+            _syncRunning = true;
+            _syncError = null;
+            renderSyncStatus();
+
+            const startSeq = pending.seq;
+            try {
+                if (_cloudReady && itemsPending()) await syncItems(startSeq);
+                if (_locReady && locationsPending()) await syncLocations(startSeq);
+            } catch (e) {
+                console.error('[Firebase] Błąd zapisu w chmurze:', e);
+                _syncError = e;
+            }
+            _syncRunning = false;
+
+            // Obsłuż dane, które przyszły z chmury w trakcie zapisu
+            const deferred = _deferred;
+            _deferred = { inv: null, loc: null };
+            if (deferred.inv) await processInvSnapshot(deferred.inv);
+            if (deferred.loc) processLocSnapshot(deferred.loc);
+
+            if (_syncError) scheduleSync(30000);
+            else if (hasPending() && _cloudReady && _locReady) scheduleSync(500);
+            else renderSyncStatus();
+        }
+
+        function rememberWriteId(writeId) {
+            _lastWriteIds.push(writeId);
+            if (_lastWriteIds.length > 10) _lastWriteIds.shift();
+        }
+
+        async function syncItems(startSeq) {
+            const writeId = CLIENT_ID + '-i-' + Date.now();
+            rememberWriteId(writeId);
+            let written = null;
+            let remap = {};
+
+            await window._fbRunTransaction(window._fbDb, async function(tx) {
+                const snap = await tx.get(window._fbInvDoc);
+                const res = snap.exists()
+                    ? reconcileItems(await readCloudItems(snap.data()), currentData, pending)
+                    : { items: currentData.slice(), remap: {} };
+                tx.set(window._fbInvDoc, await buildCloudDoc(res.items, writeId));
+                written = res.items;
+                remap = res.remap;
+            });
+
+            // Zapis potwierdzony: zdejmij z listy to, co zostało wysłane.
+            // Zmiany zrobione w trakcie zapisu (numer > startSeq) zostają do następnej tury.
+            const writtenIds = new Set(written.map(it => String(it.ID)));
+            Object.keys(pending.items).forEach(key => {
+                const entry = pending.items[key];
+                if (entry.s <= startSeq) delete pending.items[key];
+                else if (entry.k === 'new' && writtenIds.has(key) && !own(remap, key)) entry.k = 'mod';
+            });
+            if (pending.full && pending.full <= startSeq) pending.full = 0;
+            Object.keys(remap).forEach(oldId => {
+                const entry = pending.items[oldId];
+                if (!entry) return;
+                delete pending.items[oldId];
+                pending.items[String(remap[oldId])] = { k: entry.k === 'del' ? 'del' : 'mod', s: entry.s };
+                const mine = currentData.find(it => String(it.ID) === oldId);
+                if (mine) mine.ID = remap[oldId];
+            });
+            savePending();
+            setItemsFromSync(mergeItems(written, currentData, pending).items);
+            console.log('[Firebase] Inwentarz zapisany w chmurze ✓ (' + written.length + ' poz.)');
+        }
+
+        async function syncLocations(startSeq) {
+            const writeId = CLIENT_ID + '-l-' + Date.now();
+            rememberWriteId(writeId);
+            let written = null;
+
+            await window._fbRunTransaction(window._fbDb, async function(tx) {
+                const snap = await tx.get(window._fbInvLocDoc);
+                const remote = snap.exists() && Array.isArray(snap.data().locations) ? snap.data().locations : null;
+                written = remote === null ? locations.slice() : mergeLocations(remote, locations, pending);
+                tx.set(window._fbInvLocDoc, {
+                    locations: written,
+                    updatedAt: window._fbServerTimestamp(),
+                    writeId: writeId
+                });
+            });
+
+            ['locAdd', 'locDel'].forEach(group => {
+                Object.keys(pending[group]).forEach(name => {
+                    if (pending[group][name] <= startSeq) delete pending[group][name];
+                });
+            });
+            if (pending.locFull && pending.locFull <= startSeq) pending.locFull = 0;
+            savePending();
+            setLocationsFromSync(mergeLocations(written, locations, pending));
+            console.log('[Firebase] Lokalizacje zapisane w chmurze ✓');
+        }
+
+        // Wskaźnik stanu synchronizacji (prawy dolny róg). Dopóki są niewysłane zmiany, nie znika.
+        function renderSyncStatus() {
+            if (!pending) return;
+            const n = pendingCount();
+            if (!window._firebaseReady) {
+                if (n > 0) fbShowStatus('Brak połączenia z chmurą – zmiany (' + n + ') są zapisane na tym urządzeniu', '#6b7280', true);
+                return;
+            }
+            if (_syncRunning) { fbShowStatus('⟳ Zapisywanie w chmurze...', '#007bff', true); return; }
+            if (n > 0 && !navigator.onLine) {
+                fbShowStatus('Offline – zmiany (' + n + ') wyślą się po powrocie internetu', '#d97706', true);
+                return;
+            }
+            if (n > 0 && _syncError) {
+                fbShowStatus('⚠ Zmiany czekające na wysłanie: ' + n + ' (ponowię próbę)', '#dc3545', true);
+                return;
+            }
+            if (n > 0) { fbShowStatus('⟳ Zmiany do wysłania: ' + n, '#007bff', true); return; }
+            if (_cloudReady) fbShowStatus('✓ Zsynchronizowano', '#28a745', false);
+        }
+
+        function fbShowStatus(msg, color, sticky) {
             let el = document.getElementById('_fbInvStatus');
             if (!el) {
                 el = document.createElement('div');
                 el.id = '_fbInvStatus';
                 el.style.cssText = 'position:fixed;bottom:10px;right:10px;padding:6px 12px;border-radius:4px;' +
-                    'font-size:12px;color:white;z-index:9999;transition:opacity 0.5s;pointer-events:none;';
+                    'font-size:12px;color:white;z-index:9999;transition:opacity 0.5s;pointer-events:none;max-width:90vw;';
                 document.body.appendChild(el);
             }
             el.style.background = color;
             el.style.opacity = '1';
             el.textContent = '☁ ' + msg;
             clearTimeout(el._hideTimer);
-            el._hideTimer = setTimeout(function() { el.style.opacity = '0'; }, 4000);
+            if (!sticky) el._hideTimer = setTimeout(function() { el.style.opacity = '0'; }, 4000);
         }
-        // =================== KONIEC FIREBASE SYNC ===================
+
+        // Wyślij zmiany od razu, gdy karta idzie w tło (telefon) albo wraca internet
+        document.addEventListener('visibilitychange', function() {
+            if (!pending || !hasPending()) return;
+            if (document.visibilityState === 'hidden') syncNow();
+            else scheduleSync(500);
+        });
+        window.addEventListener('online', function() {
+            if (pending && hasPending()) scheduleSync(500);
+        });
+        window.addEventListener('offline', function() { renderSyncStatus(); });
+        // =================== KONIEC SYNCHRONIZACJI ===================
+
+        // =================== FUNKCJE POMOCNICZE ===================
+        const KNOWN_COLUMNS = ['ID', 'Budynek', 'Lokalizacja', 'Kategoria', 'Przedmiot', 'Producent',
+            'Numer_katalogowy', 'Numery_zamienne', 'Ilosc', 'Jednostka', 'Cena_PLN',
+            'Data_dodania', 'Status', 'Notatki'];
+
+        const UNIT_ALIASES = {
+            'szt.': 'szt', 'sztuka': 'szt', 'sztuki': 'szt', 'sztuk': 'szt',
+            'kpl': 'komplet', 'kpl.': 'komplet', 'komplety': 'komplet',
+            'op': 'opakowanie', 'op.': 'opakowanie', 'opak': 'opakowanie', 'opak.': 'opakowanie', 'opakowania': 'opakowanie',
+            'pary': 'para', 'zestawy': 'zestaw', 'kartony': 'karton',
+            'litr': 'l', 'litry': 'l', 'metr': 'm', 'metry': 'm'
+        };
+
+        // Data w czasie lokalnym (toISOString dawał datę UTC – tuż po północy wczorajszą)
+        function todayLocal() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        // Pozycja bez statusu jest traktowana jak aktywna (tak też była wyświetlana)
+        function isActiveItem(item) {
+            return !item.Status || item.Status === 'aktywny';
+        }
+
+        function roundQty(value) {
+            return Math.round(value * 1000) / 1000;
+        }
+
+        // Tekst do porównań: małe litery, bez polskich znaków
+        function normText(value) {
+            return String(value === undefined || value === null ? '' : value)
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[̀-ͯ]/g, '')
+                .replace(/ł/g, 'l');
+        }
+
+        // Numer katalogowy do porównań: bez spacji, myślników, ukośników i kropek
+        function normCode(value) {
+            return normText(value).replace(/[\s\-\/.,_]/g, '');
+        }
+
+        function queryTokens(query) {
+            return normText(query).split(/\s+/).filter(Boolean).map(t => ({ text: t, code: normCode(t) }));
+        }
+
+        // Każde słowo zapytania musi wystąpić w którymś polu (kolejność słów dowolna)
+        function itemMatchesQuery(item, tokens) {
+            const text = normText([item.Przedmiot, item.Producent, item.Numer_katalogowy, item.Numery_zamienne,
+                item.Notatki, item.Kategoria, item.Lokalizacja, item.Budynek].join(' '));
+            const codes = normCode(item.Numer_katalogowy) + ' ' + normCode(item.Numery_zamienne);
+            return tokens.every(t => text.includes(t.text) || (t.code.length >= 2 && codes.includes(t.code)));
+        }
 
         // Bezpieczne wstawianie tekstu do HTML – nazwy z CSV/AI mogą zawierać <, >, ", &
         // i bez tego psuły tabelę oraz listy rozwijane
@@ -1079,7 +1510,7 @@
 
         class InventoryApp {
             constructor() {
-                console.log('🚀 Inwentaryzacja Magazynu V10A - v4 (ręczne dodawanie + ustawienia AI)');
+                console.log('🚀 Inwentaryzacja Magazynu V11');
                 this.init();
             }
 
@@ -1088,20 +1519,36 @@
                 try { initResizableModals(); } catch(e) { console.error('Błąd inicjalizacji okien:', e); }
                 window._appInstance = this;
                 this.loadAISettings();
-                const self = this;
-                // Najpierw wczytaj z Firebase, potem zainicjalizuj UI
-                (async function() {
-                    self.loadFromLocalStorage();
-                    self.loadLocationsFromStorage();
-                    await fbLoadInventory();
-                    self.displayInventoryTable();
-                    self.updateStats();
-                    self.loadFilterOptions();
-                    self.updateAIStatusInfo();
-                    self.showDebugInfo();
-                    fbStartListener();
-                    console.log('✅ Aplikacja V10A zainicjalizowana z Firebase sync');
-                })();
+                // Dane lokalne pokazują się od razu; chmura dołącza w tle i jest z nimi łączona
+                this.loadFromLocalStorage();
+                loadPending();
+                this.loadLocationsFromStorage();
+                this.refreshAll();
+                this.updateAIStatusInfo();
+                fbStartListeners();
+                renderSyncStatus();
+                console.log('✅ Aplikacja V11 zainicjalizowana');
+            }
+
+            // Odśwież wszystko, co zależy od danych (po zmianie lokalnej albo z chmury)
+            refreshAll() {
+                this.loadFilterOptions();
+                this.displayInventoryTable();
+                this.updateStats();
+                this.showDebugInfo();
+                if (document.getElementById('locationsModal').style.display === 'block') {
+                    this.displayLocationsList();
+                }
+                const browsed = document.getElementById('browseLocationSelect').value;
+                if (browsed && document.getElementById('browseLocationModal').style.display === 'block') {
+                    this.displayLocationItems(browsed);
+                }
+            }
+
+            // ID porównywane jako tekst – działa też dla ID zapisanych kiedyś jako napis
+            findItem(id) {
+                const key = String(id);
+                return currentData.find(item => String(item.ID) === key);
             }
 
             setupEventListeners() {
@@ -1148,8 +1595,9 @@
                 // Manual Add Modal
                 document.getElementById('saveManualBtn').addEventListener('click', () => this.saveManualItem());
                 document.getElementById('cancelManualBtn').addEventListener('click', () => this.closeManualAddModal());
+                // Enter zapisuje tylko z pól tekstowych – na przycisku "Anuluj" też zapisywał
                 document.getElementById('manualAddModal').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
                         this.saveManualItem();
                     }
                 });
@@ -1180,9 +1628,20 @@
                 });
                 // Zapis przez Enter w polach tekstowych edycji
                 document.getElementById('editModal').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
                         this.saveEditItem();
                     }
+                });
+
+                // Przyciski w tabeli (edycja / usuń / przywróć / usuń trwale)
+                document.getElementById('inventoryTable').addEventListener('click', (e) => {
+                    const trigger = e.target.closest('[data-action]');
+                    const row = trigger ? trigger.closest('tr[data-item-id]') : null;
+                    if (!row) return;
+                    const id = row.dataset.itemId;
+                    if (trigger.dataset.action === 'edit') this.editItem(id);
+                    else if (trigger.dataset.action === 'toggle') this.deleteItem(id);
+                    else if (trigger.dataset.action === 'purge') this.purgeItem(id);
                 });
 
                 // Browse Location Modal
@@ -1392,6 +1851,7 @@
                 document.getElementById('manualNumerKat').value = '';
                 document.getElementById('manualNumeryZamienne').value = '';
                 document.getElementById('manualKategoria').value = '';
+                document.getElementById('manualBudynek').value = '';
                 document.getElementById('manualIlosc').value = 1;
                 document.getElementById('manualJednostka').value = 'szt';
                 document.getElementById('manualCena').value = '';
@@ -1415,7 +1875,6 @@
                 if (!item) return;
 
                 selectedSearchItemId = item.ID;
-                filteredData = [item];
                 isSearchActive = true;
                 currentPage = 1;
 
@@ -1431,6 +1890,36 @@
                 this.displayInventoryTable();
             }
 
+            // Budynek dla nowej pozycji: ten, w którym leży już większość rzeczy z tej
+            // lokalizacji (wcześniej zawsze wpisywał się "Sklep")
+            inferBuilding(location) {
+                const counts = {};
+                currentData.forEach(item => {
+                    if (item.Lokalizacja === location && item.Budynek) {
+                        counts[item.Budynek] = (counts[item.Budynek] || 0) + 1;
+                    }
+                });
+                const best = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+                return best || 'Sklep';
+            }
+
+            // Aktywna pozycja z tym samym numerem katalogowym, producentem i lokalizacją
+            findDuplicate(candidate) {
+                const code = normCode(candidate.Numer_katalogowy);
+                if (!code) return null;
+                return currentData.find(item => isActiveItem(item) &&
+                    normCode(item.Numer_katalogowy) === code &&
+                    normText(item.Producent) === normText(candidate.Producent) &&
+                    (item.Lokalizacja || '') === (candidate.Lokalizacja || '')) || null;
+            }
+
+            registerLocation(name) {
+                if (!name || locations.includes(name)) return;
+                locations.push(name);
+                markLocation(name, 'add');
+                this.saveLocationsToStorage();
+            }
+
             saveManualItem() {
                 const przedmiot = document.getElementById('manualPrzedmiot').value.trim();
                 if (!przedmiot) {
@@ -1439,15 +1928,12 @@
                     return;
                 }
 
-                let location = document.getElementById('manualNewLocation').value.trim() || document.getElementById('manualLokalizacja').value;
-                if (location && !locations.includes(location)) {
-                    locations.push(location);
-                    this.saveLocationsToStorage();
-                }
+                const location = document.getElementById('manualNewLocation').value.trim() || document.getElementById('manualLokalizacja').value;
+                this.registerLocation(location);
 
                 const newItem = {
-                    ID: this.getNextItemId(),
-                    Budynek: 'Sklep',
+                    ID: 0,
+                    Budynek: document.getElementById('manualBudynek').value.trim() || this.inferBuilding(location),
                     Lokalizacja: location,
                     Przedmiot: przedmiot,
                     Producent: document.getElementById('manualProducent').value.trim(),
@@ -1459,13 +1945,26 @@
                     Cena_PLN: parseFloat(document.getElementById('manualCena').value) || 0,
                     Status: document.getElementById('manualStatus').value || 'aktywny',
                     Notatki: document.getElementById('manualNotatki').value.trim(),
-                    Data_dodania: new Date().toISOString().split('T')[0]
+                    Data_dodania: todayLocal()
                 };
 
+                const duplicate = isActiveItem(newItem) ? this.findDuplicate(newItem) : null;
+                if (duplicate && confirm(`Taka pozycja już jest w bazie:\n\n${duplicate.Przedmiot} (ID ${duplicate.ID}), ilość: ${duplicate.Ilosc || 0} ${duplicate.Jednostka || 'szt'}\n\nOK – zwiększ jej ilość o ${newItem.Ilosc}\nAnuluj – dodaj jako osobną pozycję`)) {
+                    duplicate.Ilosc = roundQty((parseFloat(duplicate.Ilosc) || 0) + newItem.Ilosc);
+                    markItem(duplicate.ID, 'mod');
+                    this.saveToLocalStorage();
+                    this.refreshAll();
+                    this.focusOnSingleItem(duplicate, 'Zwiększono ilość');
+                    this.closeManualAddModal();
+                    this.showSuccess(`Zwiększono ilość: ${duplicate.Przedmiot} (teraz ${duplicate.Ilosc})`);
+                    return;
+                }
+
+                newItem.ID = this.getNextItemId();
                 currentData.push(newItem);
+                markItem(newItem.ID, 'new');
                 this.saveToLocalStorage();
-                this.loadFilterOptions();
-                this.updateStats();
+                this.refreshAll();
                 this.focusOnSingleItem(newItem, 'Dodano ręcznie');
                 this.closeManualAddModal();
                 this.showSuccess(`Dodano ręcznie: ${newItem.Przedmiot}`);
@@ -1486,7 +1985,7 @@
             addLocation() {
                 const locationInput = document.getElementById('newLocationInput');
                 const locationName = locationInput.value.trim();
-                
+
                 if (!locationName) {
                     this.showError('Wprowadź nazwę lokalizacji');
                     return;
@@ -1498,6 +1997,7 @@
                 }
 
                 locations.push(locationName);
+                markLocation(locationName, 'add');
                 this.saveLocationsToStorage();
                 this.displayLocationsList();
                 this.loadFilterOptions();
@@ -1506,12 +2006,49 @@
                 console.log(`📍 Dodano lokalizację: ${locationName}`);
             }
 
+            // Zmiana nazwy przenosi też wszystkie przedmioty. Podanie nazwy innej istniejącej
+            // lokalizacji łączy obie w jedną (np. "Regał za ladą" i "Regały za ladą").
+            renameLocation(oldName) {
+                const input = prompt(`Nowa nazwa dla lokalizacji "${oldName}":\n\n(wpisanie nazwy innej istniejącej lokalizacji połączy obie w jedną)`, oldName);
+                if (input === null) return;
+                const newName = input.trim();
+                if (!newName || newName === oldName) return;
+
+                const merging = locations.includes(newName);
+                const affected = currentData.filter(item => item.Lokalizacja === oldName);
+                if (merging && !confirm(`Lokalizacja "${newName}" już istnieje.\n\nPołączyć z nią "${oldName}" (${affected.length} przedmiotów)?`)) {
+                    return;
+                }
+
+                affected.forEach(item => {
+                    item.Lokalizacja = newName;
+                    markItem(item.ID, 'mod', true);
+                });
+                locations = merging
+                    ? locations.filter(loc => loc !== oldName)
+                    : locations.map(loc => loc === oldName ? newName : loc);
+                if (!locations.includes(newName)) locations.push(newName);
+                markLocation(oldName, 'del');
+                markLocation(newName, 'add');
+
+                this.saveToLocalStorage();
+                this.saveLocationsToStorage();
+                this.refreshAll();
+                this.displayLocationsList();
+                this.showSuccess(`${merging ? 'Połączono' : 'Zmieniono nazwę'}: "${oldName}" → "${newName}" (${affected.length} przedmiotów)`);
+            }
+
             removeLocation(locationName) {
-                if (!confirm(`Czy na pewno chcesz usunąć lokalizację "${locationName}"?\n\nUwaga: Przedmioty z tej lokalizacji nie zostaną usunięte.`)) {
+                const count = currentData.filter(item => item.Lokalizacja === locationName).length;
+                const note = count > 0
+                    ? `Uwaga: ${count} przedmiotów ma wpisaną tę lokalizację. Nie zostaną usunięte i zachowają ją – lokalizacja zniknie tylko z listy wyboru.`
+                    : 'Żaden przedmiot nie jest przypisany do tej lokalizacji.';
+                if (!confirm(`Czy na pewno chcesz usunąć lokalizację "${locationName}"?\n\n${note}`)) {
                     return;
                 }
 
                 locations = locations.filter(loc => loc !== locationName);
+                markLocation(locationName, 'del');
                 this.saveLocationsToStorage();
                 this.displayLocationsList();
                 this.loadFilterOptions();
@@ -1521,7 +2058,7 @@
 
             displayLocationsList() {
                 const locationsList = document.getElementById('locationsList');
-                
+
                 if (locations.length === 0) {
                     locationsList.innerHTML = `
                         <div class="text-center p-4 bg-gray-50 rounded-lg">
@@ -1545,11 +2082,17 @@
                                 (${currentData.filter(item => item.Lokalizacja === location).length} przedmiotów)
                             </span>
                         </div>
-                        <button class="text-red-600 hover:text-red-800" title="Usuń lokalizację">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <div class="flex gap-4">
+                            <button data-act="rename" class="text-blue-600 hover:text-blue-800" title="Zmień nazwę / połącz z inną lokalizacją">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button data-act="remove" class="text-red-600 hover:text-red-800" title="Usuń lokalizację">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     `;
-                    div.querySelector('button').addEventListener('click', () => this.removeLocation(location));
+                    div.querySelector('[data-act="rename"]').addEventListener('click', () => this.renameLocation(location));
+                    div.querySelector('[data-act="remove"]').addEventListener('click', () => this.removeLocation(location));
                     locationsList.appendChild(div);
                 });
             }
@@ -1567,21 +2110,7 @@
             }
 
             loadBrowseLocationOptions() {
-                const select = document.getElementById('browseLocationSelect');
-                select.innerHTML = '<option value="">Wybierz lokalizację...</option>';
-                
-                locations.forEach(location => {
-                    const itemCount = currentData.filter(item => item.Lokalizacja === location && item.Status === 'aktywny').length;
-                    select.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)} (${itemCount} przedmiotów)</option>`;
-                });
-                
-                // Jeśli brak lokalizacji, dodaj informację
-                if (locations.length === 0) {
-                    select.innerHTML += '<option value="" disabled>Brak zdefiniowanych lokalizacji</option>';
-                }
-                
-                // Dodaj event listener dla zmiany wyboru
-                select.onchange = () => this.browseLocationSelected();
+                this.loadFilterOptions();
             }
 
             browseLocationSelected() {
@@ -1596,7 +2125,7 @@
 
             displayLocationItems(location) {
                 const items = currentData.filter(item =>
-                    item.Lokalizacja === location && item.Status === 'aktywny'
+                    item.Lokalizacja === location && isActiveItem(item)
                 );
                 
                 console.log(`📍 Przedmioty w lokalizacji "${location}": ${items.length} znalezionych`);
@@ -1645,139 +2174,141 @@
                 document.getElementById('browseLocationResults').style.display = 'block';
             }
 
-            loadFilterOptions() {
-                // Przebudowa selectów zachowuje bieżące wybory - wcześniej każde
-                // odświeżenie opcji (np. po edycji przedmiotu) kasowało ustawiony filtr
-                const filterLocation = document.getElementById('filterLocation');
-                const prevFilterLocation = filterLocation.value;
-                filterLocation.innerHTML = '<option value="">Wszystkie lokalizacje</option>';
-                locations.forEach(location => {
-                    filterLocation.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)}</option>`;
-                });
-                filterLocation.value = prevFilterLocation;
-
-                // Load locations for voice modal
-                const voiceLocation = document.getElementById('voiceLocation');
-                const prevVoiceLocation = voiceLocation.value;
-                voiceLocation.innerHTML = '<option value="">Wybierz lokalizację</option>';
-                locations.forEach(location => {
-                    voiceLocation.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)}</option>`;
-                });
-                voiceLocation.value = prevVoiceLocation;
-
-                // Load locations for manual add modal
-                const manualLocation = document.getElementById('manualLokalizacja');
-                if (manualLocation) {
-                    const prevManualLocation = manualLocation.value;
-                    manualLocation.innerHTML = '<option value="">Brak lokalizacji</option>';
-                    locations.forEach(location => {
-                        manualLocation.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)}</option>`;
-                    });
-                    manualLocation.value = prevManualLocation;
-                }
-
-                // Load locations for browse modal
-                const browseLocation = document.getElementById('browseLocationSelect');
-                if (browseLocation) {
-                    const prevBrowseLocation = browseLocation.value;
-                    browseLocation.innerHTML = '<option value="">Wybierz lokalizację...</option>';
-                    locations.forEach(location => {
-                        const itemCount = currentData.filter(item => item.Lokalizacja === location && item.Status === 'aktywny').length;
-                        browseLocation.innerHTML += `<option value="${escapeHtml(location)}">${escapeHtml(location)} (${itemCount} przedmiotów)</option>`;
-                    });
-                    browseLocation.value = prevBrowseLocation;
-                }
-
-                // Add fallback location if none exist
-                if (locations.length === 0) {
-                    const fallbackLocation = 'Sklep - Regał główny';
-                    voiceLocation.innerHTML += `<option value="${fallbackLocation}">${fallbackLocation}</option>`;
-                }
-
-                // Load categories for filters
-                const filterCategory = document.getElementById('filterCategory');
-                const prevFilterCategory = filterCategory.value;
-                const categories = [...new Set(currentData.map(item => item.Kategoria))].filter(Boolean);
-                filterCategory.innerHTML = '<option value="">Wszystkie kategorie</option>';
-                categories.forEach(category => {
-                    filterCategory.innerHTML += `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`;
-                });
-                filterCategory.value = prevFilterCategory;
+            // Lista lokalizacji plus lokalizacje wpisane w przedmiotach, których na liście nie ma
+            // (np. usunięte z listy) – inaczej takich przedmiotów nie dało się odfiltrować
+            allLocations() {
+                const extra = [...new Set(currentData.map(item => item.Lokalizacja).filter(Boolean))]
+                    .filter(loc => !locations.includes(loc));
+                return locations.concat(extra);
             }
 
+            // Przebudowa selecta z zachowaniem bieżącego wyboru
+            fillSelect(select, firstOption, values, labelFn) {
+                if (!select) return;
+                const prev = select.value;
+                select.innerHTML = firstOption + values.map(value =>
+                    `<option value="${escapeHtml(value)}">${escapeHtml(labelFn ? labelFn(value) : value)}</option>`
+                ).join('');
+                select.value = prev;
+                if (select.selectedIndex === -1) select.value = '';
+            }
+
+            // Jeśli wartości nie ma wśród opcji selecta, dopisz ją – inaczej select pokazałby
+            // pierwszą opcję i zapis edycji po cichu skasowałby wartość
+            ensureOption(select, value) {
+                if (!value) return;
+                if (Array.from(select.options).some(o => o.value === value)) return;
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = value;
+                select.appendChild(opt);
+            }
+
+            loadFilterOptions() {
+                const all = this.allLocations();
+                const activeCount = {};
+                currentData.forEach(item => {
+                    if (isActiveItem(item) && item.Lokalizacja) {
+                        activeCount[item.Lokalizacja] = (activeCount[item.Lokalizacja] || 0) + 1;
+                    }
+                });
+
+                this.fillSelect(document.getElementById('filterLocation'),
+                    '<option value="">Wszystkie lokalizacje</option>', all);
+                this.fillSelect(document.getElementById('voiceLocation'),
+                    '<option value="">Wybierz lokalizację</option>', all.length > 0 ? all : ['Sklep - Regał główny']);
+                this.fillSelect(document.getElementById('manualLokalizacja'),
+                    '<option value="">Brak lokalizacji</option>', all);
+                this.fillSelect(document.getElementById('browseLocationSelect'),
+                    '<option value="">Wybierz lokalizację...</option>', all,
+                    loc => `${loc} (${activeCount[loc] || 0} przedmiotów)`);
+
+                const categories = [...new Set(currentData.map(item => item.Kategoria))].filter(Boolean);
+                this.fillSelect(document.getElementById('filterCategory'),
+                    '<option value="">Wszystkie kategorie</option>', categories);
+
+                const buildings = [...new Set(currentData.map(item => item.Budynek))].filter(Boolean);
+                document.getElementById('buildingList').innerHTML =
+                    buildings.map(b => `<option value="${escapeHtml(b)}"></option>`).join('');
+            }
+
+            // Zapis lokalny + wysyłka do chmury. Samą zmianę (dodanie/usunięcie) zgłasza
+            // wcześniej markLocation(), żeby chmura dostała tylko różnicę.
             saveLocationsToStorage() {
-                localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
-                console.log(`💾 Zapisano ${locations.length} lokalizacji do localStorage`);
-                // Firebase sync
-                try { fbSaveLocations(); } catch(e) {}
+                try {
+                    localStorage.setItem(LOCATIONS_KEY, JSON.stringify(locations));
+                } catch (e) {
+                    console.error('Błąd zapisu lokalizacji:', e);
+                }
+                scheduleSync();
             }
 
             loadLocationsFromStorage() {
-                const data = localStorage.getItem(LOCATIONS_KEY);
-                if (data) {
-                    locations = JSON.parse(data);
-                    console.log(`📂 Załadowano ${locations.length} lokalizacji z localStorage`);
-                } else {
-                    // Extract locations from current data if exists
-                    const dataLocations = [...new Set(currentData.map(item => item.Lokalizacja))].filter(Boolean);
-                    if (dataLocations.length > 0) {
-                        locations = dataLocations;
-                        this.saveLocationsToStorage();
-                        console.log(`📍 Wyodrębniono ${locations.length} lokalizacji z danych`);
-                    } else {
-                        locations = [];
-                        console.log('📂 Brak lokalizacji - rozpoczynamy z pustą listą');
-                    }
+                let stored = null;
+                try {
+                    stored = JSON.parse(localStorage.getItem(LOCATIONS_KEY) || 'null');
+                } catch (e) {
+                    console.error('Uszkodzony zapis lokalizacji:', e);
                 }
+                if (Array.isArray(stored)) {
+                    locations = stored;
+                    return;
+                }
+                // Brak zapisanej listy – wyodrębnij lokalizacje z przedmiotów
+                locations = [];
+                [...new Set(currentData.map(item => item.Lokalizacja))].filter(Boolean)
+                    .forEach(name => this.registerLocation(name));
+            }
+
+            // Wyniki wyszukiwania są liczone na bieżąco z aktualnych danych. Wcześniej była to
+            // zapamiętana lista, która po synchronizacji pokazywała stare kopie rekordów.
+            getSearchResults() {
+                const tokens = queryTokens(activeSearchQuery);
+                return currentData.filter(item => itemMatchesQuery(item, tokens));
             }
 
             getCurrentDisplayData() {
-                let displayData = currentData;
-
                 // Jeśli użytkownik wybrał konkretną sugestię z wyszukiwarki,
                 // pokaż dokładnie ten rekord niezależnie od dodatkowych filtrów.
                 if (selectedSearchItemId !== null) {
-                    const selectedItem = currentData.find(item => item.ID === selectedSearchItemId);
+                    const selectedItem = this.findItem(selectedSearchItemId);
                     return selectedItem ? [selectedItem] : [];
                 }
 
-                // Apply search filter
-                if (isSearchActive) {
-                    displayData = filteredData;
-                }
+                let displayData = isSearchActive ? this.getSearchResults() : currentData;
 
-                // Apply status filter
                 const statusFilter = document.getElementById('filterStatus').value;
-                if (statusFilter) {
+                if (statusFilter === 'aktywny') {
+                    displayData = displayData.filter(item => isActiveItem(item));
+                } else if (statusFilter) {
                     displayData = displayData.filter(item => item.Status === statusFilter);
                 }
 
-                // Apply location filter
                 const locationFilter = document.getElementById('filterLocation').value;
                 if (locationFilter) {
                     displayData = displayData.filter(item => item.Lokalizacja === locationFilter);
                 }
 
-                // Apply category filter
                 const categoryFilter = document.getElementById('filterCategory').value;
                 if (categoryFilter) {
                     displayData = displayData.filter(item => item.Kategoria === categoryFilter);
                 }
-                
+
                 return displayData;
             }
 
             displayInventoryTable() {
                 const tbody = document.getElementById('inventoryTable');
                 const displayData = this.getCurrentDisplayData();
-                
+
                 if (displayData.length === 0) {
+                    const filtered = isSearchActive || document.getElementById('filterStatus').value ||
+                        document.getElementById('filterLocation').value || document.getElementById('filterCategory').value;
                     tbody.innerHTML = `
                         <tr>
                             <td colspan="9" class="text-center p-8">
                                 <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
-                                <p class="text-gray-500">${isSearchActive ? 'Nie znaleziono wyników wyszukiwania.' : 'Brak danych. Kliknij "Import CSV" aby wczytać bazę danych.'}</p>
-                                <p class="text-sm text-gray-400 mt-2">Wersja V10 - PWA z zarządzaniem lokalizacjami</p>
+                                <p class="text-gray-500">${currentData.length > 0 && filtered ? 'Nie znaleziono pozycji dla tego wyszukiwania / filtrów.' : 'Brak danych. Kliknij "Import CSV" aby wczytać bazę danych.'}</p>
                             </td>
                         </tr>
                     `;
@@ -1785,46 +2316,51 @@
                     return;
                 }
 
-                const startIndex = (currentPage - 1) * itemsPerPage;
-                const endIndex = startIndex + itemsPerPage;
-                const pageItems = displayData.slice(startIndex, endIndex);
+                // Jeśli strona jest poza zakresem (np. po filtrowaniu), wróć do ostatniej istniejącej
+                const totalPages = Math.ceil(displayData.length / itemsPerPage);
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
 
-                tbody.innerHTML = pageItems.map(item => `
-                    <tr data-item-id="${item.ID}" class="${item.Status === 'usunięty' ? 'bg-red-50' : ''} ${isSearchActive ? 'search-active' : ''} ${selectedSearchItemId === item.ID ? 'search-selected' : ''}">
-                        <td>${item.ID}</td>
-                        <td class="text-xs">${escapeHtml(item.Lokalizacja || '-')}</td>
-                        <td class="editable font-medium" onclick="app.editField(${item.ID}, 'Przedmiot')">${escapeHtml(item.Przedmiot || '-')}</td>
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const pageItems = displayData.slice(startIndex, startIndex + itemsPerPage);
+
+                // Przyciski działają przez data-action (obsługa w setupEventListeners)
+                tbody.innerHTML = pageItems.map(item => {
+                    const active = isActiveItem(item);
+                    const deleted = item.Status === 'usunięty';
+                    const selected = selectedSearchItemId !== null && String(selectedSearchItemId) === String(item.ID);
+                    return `
+                    <tr data-item-id="${escapeHtml(item.ID)}" class="${active ? '' : 'bg-red-50'} ${isSearchActive ? 'search-active' : ''} ${selected ? 'search-selected' : ''}">
+                        <td>${escapeHtml(item.ID)}</td>
+                        <td class="text-xs">${escapeHtml(item.Lokalizacja || '-')}${item.Budynek ? `<div class="text-gray-400">${escapeHtml(item.Budynek)}</div>` : ''}</td>
+                        <td class="editable font-medium" data-action="edit">${escapeHtml(item.Przedmiot || '-')}</td>
                         <td>${escapeHtml(item.Producent || '-')}</td>
                         <td class="font-mono text-sm">${escapeHtml(item.Numer_katalogowy || '-')}</td>
-                        <td class="text-center">${item.Ilosc || 0} ${escapeHtml(item.Jednostka || 'szt')}</td>
+                        <td class="text-center">${escapeHtml(item.Ilosc || 0)} ${escapeHtml(item.Jednostka || 'szt')}</td>
                         <td class="text-right font-medium">${this.formatCurrency(item.Cena_PLN)}</td>
                         <td>
-                            <span class="px-2 py-1 rounded text-xs ${item.Status === 'aktywny' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                            <span class="px-2 py-1 rounded text-xs ${active ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
                                 ${escapeHtml(item.Status || 'aktywny')}
                             </span>
                         </td>
                         <td class="action-buttons">
-                            <button class="btn-edit" onclick="app.editItem(${item.ID})" title="Edytuj przedmiot">
+                            <button class="btn-edit" data-action="edit" title="Edytuj przedmiot">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="${item.Status === 'usunięty' ? 'btn-edit' : 'btn-delete'}" 
-                                    onclick="app.deleteItem(${item.ID})" 
-                                    title="${item.Status === 'usunięty' ? 'Przywróć przedmiot' : 'Usuń przedmiot'}">
-                                <i class="fas fa-${item.Status === 'usunięty' ? 'undo' : 'trash'}"></i>
+                            <button class="${deleted ? 'btn-edit' : 'btn-delete'}" data-action="toggle"
+                                    title="${deleted ? 'Przywróć przedmiot' : 'Usuń przedmiot'}">
+                                <i class="fas fa-${deleted ? 'undo' : 'trash'}"></i>
                             </button>
+                            ${deleted ? `<button class="btn-delete" data-action="purge" title="Usuń trwale z bazy">
+                                <i class="fas fa-times"></i>
+                            </button>` : ''}
                         </td>
-                    </tr>
-                `).join('');
+                    </tr>`;
+                }).join('');
 
                 this.updatePagination(displayData.length);
                 document.getElementById('pagination').style.display = displayData.length > itemsPerPage ? 'flex' : 'none';
                 this.scrollToSelectedSearchRow();
-                // Jeśli strona jest poza zakresem (np. po filtrowaniu), wróć do 1
-                const totalPages = Math.ceil(displayData.length / itemsPerPage);
-                if (currentPage > totalPages && totalPages > 0) {
-                    currentPage = 1;
-                    this.displayInventoryTable();
-                }
             }
 
             formatCurrency(price) {
@@ -1845,52 +2381,47 @@
             }
 
             updateStats() {
-                const stats = {
-                    total: currentData.length,
-                    active: currentData.filter(item => item.Status === 'aktywny').length,
-                    categories: [...new Set(currentData.map(item => item.Kategoria).filter(Boolean))].length,
-                    totalValue: 0
-                };
+                const activeItems = currentData.filter(item => isActiveItem(item));
+                let totalValue = 0;
+                let withoutPrice = 0;
 
-                currentData.filter(item => item.Status === 'aktywny').forEach(item => {
+                activeItems.forEach(item => {
                     const price = parseFloat(item.Cena_PLN) || 0;
                     const quantity = parseFloat(item.Ilosc) || 0;
-                    stats.totalValue += price * quantity;
+                    totalValue += price * quantity;
+                    if (!price) withoutPrice++;
                 });
 
-                console.log(`📊 V10 Stats Update:`, stats);
-
-                // Update UI
-                document.getElementById('totalItems').textContent = stats.total;
-                document.getElementById('activeItems').textContent = stats.active;
-                document.getElementById('totalValue').textContent = stats.totalValue.toFixed(2) + ' PLN';
-                document.getElementById('categories').textContent = stats.categories;
+                document.getElementById('totalItems').textContent = currentData.length;
+                document.getElementById('activeItems').textContent = activeItems.length;
+                document.getElementById('totalValue').textContent = totalValue.toFixed(2) + ' PLN';
+                document.getElementById('categories').textContent =
+                    [...new Set(currentData.map(item => item.Kategoria).filter(Boolean))].length;
+                // Pozycje bez ceny zaniżają wartość magazynu – pokaż, ile ich jest
+                document.getElementById('noPriceInfo').textContent =
+                    withoutPrice > 0 ? `${withoutPrice} aktywnych pozycji bez ceny (nie liczą się do wartości)` : '';
             }
 
             showDebugInfo() {
-                const debugInfo = {
-                    version: 'V10A',
-                    storageKey: STORAGE_KEY,
-                    locationsKey: LOCATIONS_KEY,
-                    dataCount: currentData.length,
-                    locationsCount: locations.length,
-                    searchActive: isSearchActive,
-                    filteredCount: filteredData.length,
-                    pwaInstallable: !!deferredInstallPrompt,
-                    isStandalone: window.matchMedia('(display-mode: standalone)').matches
-                };
+                const sizeBytes = new Blob([JSON.stringify(currentData)]).size;
+                const cloudState = !window._firebaseReady ? 'NIEDOSTĘPNA (tryb lokalny)'
+                    : !_cloudReady ? 'łączenie...'
+                    : _syncError ? 'BŁĄD: ' + escapeHtml(_syncError.message || _syncError)
+                    : 'połączona';
 
                 document.getElementById('debugInfo').innerHTML = `
-                    <strong>Wersja:</strong> ${debugInfo.version}<br>
-                    <strong>Storage Key:</strong> ${debugInfo.storageKey}<br>
-                    <strong>Locations Key:</strong> ${debugInfo.locationsKey}<br>
-                    <strong>Liczba przedmiotów:</strong> ${debugInfo.dataCount}<br>
-                    <strong>Liczba lokalizacji:</strong> ${debugInfo.locationsCount}<br>
-                    <strong>Wyszukiwanie aktywne:</strong> ${debugInfo.searchActive ? 'TAK' : 'NIE'}<br>
-                    <strong>Wyniki wyszukiwania:</strong> ${debugInfo.filteredCount}<br>
-                    <strong>PWA instalowalne:</strong> ${debugInfo.pwaInstallable ? 'TAK' : 'NIE'}<br>
-                    <strong>Tryb standalone:</strong> ${debugInfo.isStandalone ? 'TAK' : 'NIE'}<br>
-                    <strong>Service Worker:</strong> ${'serviceWorker' in navigator ? 'OBSŁUGIWANY' : 'BRAK'}
+                    <strong>Wersja:</strong> V11<br>
+                    <strong>Storage Key:</strong> ${STORAGE_KEY}<br>
+                    <strong>Locations Key:</strong> ${LOCATIONS_KEY}<br>
+                    <strong>Liczba przedmiotów:</strong> ${currentData.length}<br>
+                    <strong>Liczba lokalizacji:</strong> ${locations.length}<br>
+                    <strong>Rozmiar bazy:</strong> ${(sizeBytes / 1024).toFixed(0)} KB${sizeBytes > FB_COMPRESS_THRESHOLD ? ' (w chmurze zapisywana z kompresją)' : ''}<br>
+                    <strong>Chmura:</strong> ${cloudState}<br>
+                    <strong>Zmiany czekające na wysłanie:</strong> ${pending ? pendingCount() : 0}<br>
+                    <strong>Wyszukiwanie aktywne:</strong> ${isSearchActive ? 'TAK' : 'NIE'}<br>
+                    <strong>PWA instalowalne:</strong> ${deferredInstallPrompt ? 'TAK' : 'NIE'}<br>
+                    <strong>Tryb standalone:</strong> ${window.matchMedia('(display-mode: standalone)').matches ? 'TAK' : 'NIE'}<br>
+                    <strong>Service Worker:</strong> ${'serviceWorker' in navigator ? (navigator.serviceWorker.controller ? 'AKTYWNY' : 'OBSŁUGIWANY') : 'BRAK'}
                 `;
             }
 
@@ -1905,78 +2436,57 @@
             }
 
             clearAllData() {
-                if (!confirm('Czy na pewno chcesz wyczyścić WSZYSTKIE dane (przedmioty + lokalizacje)?\nTa operacja jest nieodwracalna!\n\nDane zostaną usunięte również z chmury Firebase.')) {
+                if (!confirm('Czy na pewno chcesz wyczyścić WSZYSTKIE dane (przedmioty + lokalizacje)?\nTa operacja jest nieodwracalna!\n\nDane zostaną usunięte również z chmury Firebase i z pozostałych urządzeń.\nPrzed wyczyszczeniem automatycznie pobiorę kopię CSV.')) {
                     return;
                 }
 
-                currentData = [];
-                filteredData = [];
-                locations = [];
-                isSearchActive = false;
-                localStorage.removeItem(STORAGE_KEY);
-                localStorage.removeItem(LOCATIONS_KEY);
-
-                // Wyczyść również Firebase
-                if (window._firebaseReady && window._fbSetDoc) {
-                    window._fbSetDoc(window._fbInvDoc, { items: [], updatedAt: window._fbServerTimestamp() })
-                        .then(() => console.log('[Firebase] Inwentarz wyczyszczony ✓'))
-                        .catch(e => console.error('[Firebase] Błąd czyszczenia inwentarza:', e));
-                    window._fbSetDoc(window._fbInvLocDoc, { locations: [], updatedAt: window._fbServerTimestamp() })
-                        .then(() => console.log('[Firebase] Lokalizacje wyczyszczone ✓'))
-                        .catch(e => console.error('[Firebase] Błąd czyszczenia lokalizacji:', e));
+                if (currentData.length > 0) {
+                    this.downloadCSV(`magazyn_przed_wyczyszczeniem_${todayLocal()}.csv`);
                 }
 
+                currentData = [];
+                locations = [];
+                // Lokalna (pusta) wersja ma zastąpić to, co jest w chmurze
+                markFull();
+                markLocationsFull();
+                this.saveToLocalStorage();
+                this.saveLocationsToStorage();
+
                 this.clearSearch();
-                this.displayInventoryTable();
-                this.updateStats();
-                this.loadFilterOptions();
-                this.showDebugInfo();
+                this.refreshAll();
                 this.showSuccess('Wszystkie dane zostały wyczyszczone (lokalnie i w chmurze)');
             }
 
             performSearch() {
-                const query = document.getElementById('searchInput').value.toLowerCase().trim();
+                const query = document.getElementById('searchInput').value.trim();
                 if (!query) {
                     this.showError('Wprowadź frazę do wyszukania');
                     return;
                 }
 
                 selectedSearchItemId = null;
-                document.getElementById('searchSuggestions').style.display = 'none';
-                console.log(`🔍 V10 Search: "${query}" in ${currentData.length} items`);
-
-                filteredData = currentData.filter(item => {
-                    const matches = (item.Przedmiot && item.Przedmiot.toLowerCase().includes(query)) ||
-                                   (item.Numer_katalogowy && item.Numer_katalogowy.toLowerCase().includes(query)) ||
-                                   (item.Numery_zamienne && item.Numery_zamienne.toLowerCase().includes(query)) ||
-                                   (item.Notatki && item.Notatki.toLowerCase().includes(query)) ||
-                                   (item.Producent && item.Producent.toLowerCase().includes(query));
-                    
-                    if (matches) {
-                        console.log(`✅ Found: ${item.Przedmiot} (ID: ${item.ID})`);
-                    }
-                    return matches;
-                });
-
+                activeSearchQuery = query;
                 isSearchActive = true;
                 currentPage = 1;
+                document.getElementById('searchSuggestions').style.display = 'none';
+
+                const found = this.getSearchResults().length;
 
                 const searchInfo = document.getElementById('searchInfo');
                 searchInfo.innerHTML = `
                     <i class="fas fa-search mr-2"></i>
-                    <strong>Wyszukiwanie:</strong> "${escapeHtml(query)}" - znaleziono ${filteredData.length} wyników z ${currentData.length} przedmiotów
+                    <strong>Wyszukiwanie:</strong> "${escapeHtml(query)}" - znaleziono ${found} wyników z ${currentData.length} przedmiotów
                 `;
                 searchInfo.style.display = 'block';
 
                 document.getElementById('clearSearchBtn').style.display = 'inline-block';
 
                 this.displayInventoryTable();
-                console.log(`🎯 V10 Search results: ${filteredData.length} found`);
 
-                if (filteredData.length === 0) {
+                if (found === 0) {
                     this.showError(`Nie znaleziono wyników dla: "${query}"`);
                 } else {
-                    this.showSuccess(`Znaleziono ${filteredData.length} wyników dla: "${query}"`);
+                    this.showSuccess(`Znaleziono ${found} wyników dla: "${query}"`);
                 }
             }
 
@@ -1985,27 +2495,31 @@
                 document.getElementById('searchInfo').style.display = 'none';
                 document.getElementById('clearSearchBtn').style.display = 'none';
                 document.getElementById('searchSuggestions').style.display = 'none';
-                
+
                 isSearchActive = false;
-                filteredData = [];
+                activeSearchQuery = '';
                 selectedSearchItemId = null;
                 currentPage = 1;
-                
+
                 this.displayInventoryTable();
-                console.log('🔄 V10 Search cleared');
             }
 
             handleSearchInput(e) {
-                const query = e.target.value.toLowerCase().trim();
+                const query = e.target.value.trim();
                 if (query.length < 2) {
                     document.getElementById('searchSuggestions').style.display = 'none';
                     return;
                 }
 
-                const suggestions = currentData.filter(item => 
-                    (item.Przedmiot && item.Przedmiot.toLowerCase().includes(query)) ||
-                    (item.Numer_katalogowy && item.Numer_katalogowy.toLowerCase().includes(query))
-                ).slice(0, 5);
+                // Te same zasady co w pełnym wyszukiwaniu, ale tylko 5 pierwszych trafień
+                const tokens = queryTokens(query);
+                const suggestions = [];
+                for (const item of currentData) {
+                    if (itemMatchesQuery(item, tokens)) {
+                        suggestions.push(item);
+                        if (suggestions.length === 5) break;
+                    }
+                }
 
                 this.displaySearchSuggestions(suggestions);
             }
@@ -2041,7 +2555,6 @@
                 document.getElementById('clearSearchBtn').style.display = 'inline-block';
 
                 selectedSearchItemId = item.ID;
-                filteredData = [item];
                 isSearchActive = true;
                 currentPage = 1;
 
@@ -2113,118 +2626,135 @@
                     return;
                 }
 
-                // Ukryj przycisk przetwarzania i pokaż progress
+                const message = document.getElementById('processingMessage');
+                const setMessage = (msg) => {
+                    message.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>${msg}`;
+                };
                 document.getElementById('processVoice').disabled = true;
-                document.getElementById('processingMessage').style.display = 'block';
-                document.getElementById('processingMessage').innerHTML =
-                    '<i class="fas fa-spinner fa-spin mr-2"></i>Przygotowywanie przetwarzania...';
+                message.style.display = 'block';
+                setMessage('Przygotowywanie przetwarzania...');
 
                 try {
+                    // Bardzo długi tekst (powyżej 3000 znaków) jest dzielony na części
+                    const parts = text.length > 3000 ? this.splitLongText(text) : [text];
+                    const warnings = [];
                     let allResults = [];
-                    
-                    // Jeśli tekst jest bardzo długi (powyżej 3000 znaków), podziel na części
-                    if (text.length > 3000) {
-                        const parts = this.splitLongText(text);
-                        const totalParts = parts.length;
-                        
-                        document.getElementById('processingMessage').innerHTML =
-                            `<i class="fas fa-spinner fa-spin mr-2"></i>Przetwarzanie części 1/${totalParts}...`;
-                        
-                        for (let i = 0; i < parts.length; i++) {
-                            const part = parts[i];
-                            
-                            // Aktualizuj status przetwarzania
-                            document.getElementById('processingMessage').innerHTML =
-                                `<i class="fas fa-spinner fa-spin mr-2"></i>Przetwarzanie części ${i + 1}/${totalParts} (${part.length} znaków)...`;
-                            
-                            console.log(`🔍 Przetwarzanie części ${i + 1}/${totalParts}, znaków: ${part.length}`);
-                            
-                            try {
-                                const aiResponse = await this.callAIAPI(part);
-                                if (Array.isArray(aiResponse)) {
-                                    allResults = allResults.concat(aiResponse);
-                                    console.log(`✅ Część ${i + 1} przetworzona pomyślnie, znaleziono ${aiResponse.length} przedmiotów`);
-                                }
-                            } catch (error) {
-                                console.error(`❌ Błąd w części ${i + 1}:`, error);
-                                this.showError(`Błąd w części ${i + 1}: ${error.message}. Kontynuowanie przetwarzania...`);
+
+                    for (let i = 0; i < parts.length; i++) {
+                        setMessage(parts.length > 1
+                            ? `Przetwarzanie części ${i + 1}/${parts.length} (${parts[i].length} znaków)...`
+                            : 'Przetwarzanie przez AI...');
+
+                        try {
+                            const result = await this.processAIChunk(parts[i], setMessage);
+                            allResults = allResults.concat(result.items);
+                            if (result.incomplete) {
+                                warnings.push(`AI ucięło odpowiedź${parts.length > 1 ? ` dla części ${i + 1}` : ''} – lista może być niepełna. Porównaj ją z tekstem.`);
                             }
-                            
-                            // Małe opóźnienie między requestami aby uniknąć rate limiting
-                            if (i < parts.length - 1) {
-                                await new Promise(resolve => setTimeout(resolve, 500));
-                            }
+                        } catch (error) {
+                            console.error(`❌ Błąd w części ${i + 1}:`, error);
+                            if (parts.length === 1) throw error;
+                            warnings.push(`Część ${i + 1} z ${parts.length} NIE została przetworzona (${error.message}). Zaczynała się od: „${parts[i].slice(0, 80)}…”`);
                         }
-                    } else {
-                        // Normalne przetwarzanie dla krótkich tekstów
-                        const aiResponse = await this.callAIAPI(text);
-                        if (Array.isArray(aiResponse)) {
-                            allResults = aiResponse;
+
+                        // Małe opóźnienie między requestami aby uniknąć rate limiting
+                        if (i < parts.length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
                         }
                     }
-                    
+
                     if (allResults.length === 0) {
-                        this.showError('AI nie rozpoznało żadnych przedmiotów w tekście');
+                        this.showError(warnings.length > 0 ? warnings[0] : 'AI nie rozpoznało żadnych przedmiotów w tekście');
                         return;
                     }
-                    
-                    this.displayAIResults(allResults, location);
-                    
+
+                    this.displayAIResults(allResults, location, warnings);
+
                 } catch (error) {
                     this.showError('Błąd przetwarzania AI: ' + error.message);
                 } finally {
                     document.getElementById('processVoice').disabled = false;
-                    document.getElementById('processingMessage').style.display = 'none';
+                    message.style.display = 'none';
                 }
             }
 
-            // Split long text into manageable parts for AI processing
+            // Jedna porcja tekstu. Gdy model utnie odpowiedź na limicie długości, zachowujemy
+            // kompletne pozycje i prosimy o pozostałe – wcześniej cała lista przepadała
+            // z błędem "to nie jest JSON".
+            async processAIChunk(text, setMessage) {
+                let items = [];
+                for (let round = 0; round < 6; round++) {
+                    if (round > 0 && setMessage) {
+                        setMessage(`Długa lista – pobieram dalszy ciąg (mam już ${items.length} pozycji)...`);
+                    }
+                    const done = items.map(item => item && item.Przedmiot).filter(Boolean);
+                    const result = await this.callAIAPI(text, done);
+                    items = items.concat(result.items);
+                    if (!result.truncated) return { items, incomplete: false };
+                    if (result.items.length === 0) break;
+                }
+                return { items, incomplete: true };
+            }
+
+            // Dzieli długi tekst na porcje dla AI. Tnie w naturalnych miejscach (nowa linia,
+            // koniec zdania, średnik, przecinek, spacja) – nigdy w środku słowa.
             splitLongText(text, maxLength = 2500) {
-                console.log(`✂️ Dzielenie długiego tekstu (${text.length} znaków) na części po ${maxLength} znaków`);
-                
+                const breakers = ['\n', '. ', '; ', ', ', ' '];
                 const parts = [];
-                let currentPart = '';
-                const lines = text.split('\n');
-                
-                for (const line of lines) {
-                    // Jeśli dodanie tej linii przekroczy maxLength, zapisz obecną część i zacznij nową
-                    if (currentPart.length + line.length + 1 > maxLength && currentPart.length > 0) {
-                        parts.push(currentPart.trim());
-                        currentPart = line;
-                    } else {
-                        // Dodaj linię do obecnej części
-                        if (currentPart.length > 0) {
-                            currentPart += '\n' + line;
-                        } else {
-                            currentPart = line;
+                let rest = text.trim();
+
+                while (rest.length > maxLength) {
+                    let cut = -1;
+                    for (const breaker of breakers) {
+                        const pos = rest.lastIndexOf(breaker, maxLength);
+                        if (pos > maxLength * 0.4) {
+                            cut = pos + breaker.length;
+                            break;
                         }
                     }
+                    if (cut === -1) cut = maxLength;
+                    parts.push(rest.slice(0, cut).trim());
+                    rest = rest.slice(cut).trim();
                 }
-                
-                // Dodaj ostatnią część jeśli nie jest pusta
-                if (currentPart.trim().length > 0) {
-                    parts.push(currentPart.trim());
-                }
-                
-                // Jeśli po podziale na linie nadal mamy za długie części, dzielimy na siłę
-                const finalParts = [];
-                for (const part of parts) {
-                    if (part.length <= maxLength) {
-                        finalParts.push(part);
-                    } else {
-                        // Dziel na mniejsze kawałki
-                        for (let i = 0; i < part.length; i += maxLength) {
-                            finalParts.push(part.substring(i, i + maxLength));
-                        }
-                    }
-                }
-                
-                console.log(`✅ Podzielono na ${finalParts.length} części`);
-                return finalParts;
+                if (rest) parts.push(rest);
+
+                console.log(`✂️ Podzielono tekst (${text.length} znaków) na ${parts.length} części`);
+                return parts.filter(Boolean);
             }
 
-            // ENHANCED AI PROMPT - V10A keeps all previous improvements
-            async callAIAPI(text) {
+            // Wyciąga kompletne obiekty z uciętej tablicy JSON
+            salvageJSONArray(text) {
+                const start = text.indexOf('[');
+                if (start === -1) return [];
+                let depth = 0;
+                let inString = false;
+                let escaped = false;
+                let lastEnd = -1;
+                for (let i = start + 1; i < text.length; i++) {
+                    const c = text[i];
+                    if (inString) {
+                        if (escaped) escaped = false;
+                        else if (c === '\\') escaped = true;
+                        else if (c === '"') inString = false;
+                        continue;
+                    }
+                    if (c === '"') inString = true;
+                    else if (c === '{') depth++;
+                    else if (c === '}') {
+                        depth--;
+                        if (depth === 0) lastEnd = i;
+                    }
+                }
+                if (lastEnd === -1) return [];
+                try {
+                    return JSON.parse(text.slice(start, lastEnd + 1) + ']');
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            // ENHANCED AI PROMPT - V11 keeps all previous improvements
+            async callAIAPI(text, alreadyDone = []) {
                 const prompt = `Jesteś eksperckim asystentem inwentaryzacji magazynu. Musisz DOKŁADNIE przeanalizować tekst użytkownika i wyodrębnić WSZYSTKIE szczegółowe informacje o przedmiotach.
 
 TEKST UŻYTKOWNIKA: "${text}"
@@ -2242,7 +2772,7 @@ Zwróć odpowiedź jako JSON array z obiektami zawierającymi:
 - Numer_katalogowy (jeśli podano)
 - Numery_zamienne (jeśli podano, inaczej pusty string)
 - Ilosc (liczba, domyślnie 1)
-- Jednostka (domyślnie "szt")
+- Jednostka (jedna z: szt, kg, l, m, para, komplet, zestaw, opakowanie, karton, rolka; domyślnie "szt")
 - Cena_PLN (liczba dziesiętna lub 0)
 - Kategoria (określ odpowiednią kategorię)
 - Notatki (tylko dodatkowe informacje, nie duplikuj szczegółów z nazwy przedmiotu)
@@ -2262,6 +2792,11 @@ Wynik: "Przedmiot": "Młotek duży kilogramowy"
 
 Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
 
+                // Przy dalszym ciągu uciętej listy podajemy, co już mamy
+                const fullPrompt = alreadyDone.length === 0 ? prompt : prompt +
+                    `\n\nUWAGA: poniższe przedmioty z tego tekstu zostały JUŻ przetworzone. POMIŃ je i zwróć wyłącznie pozostałe przedmioty z tekstu (jeśli nic nie zostało, zwróć []):\n` +
+                    alreadyDone.map(name => `- ${name}`).join('\n');
+
                 const settings = this.getResolvedAISettings();
                 if (!settings.apiKey) {
                     throw new Error('Brak klucza AI. Uzupełnij go w menu „Ustawienia AI”.');
@@ -2275,9 +2810,9 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                     },
                     body: JSON.stringify({
                         model: settings.model,
-                        messages: [{ role: 'user', content: prompt }],
+                        messages: [{ role: 'user', content: fullPrompt }],
                         temperature: 0.1,
-                        max_tokens: 3000
+                        max_tokens: 4000
                     })
                 });
 
@@ -2291,71 +2826,98 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 }
 
                 const data = await response.json();
-                const aiResponse = data.choices[0]?.message?.content;
+                const choice = data?.choices?.[0];
+                const aiResponse = choice?.message?.content;
 
                 if (!aiResponse) {
                     throw new Error('Brak odpowiedzi z AI');
                 }
 
-                // Clean up the response and parse JSON
+                // finish_reason "length" = model doszedł do limitu i urwał odpowiedź w połowie
+                const truncated = choice.finish_reason === 'length';
+
                 let cleanedResponse = aiResponse.trim();
                 if (cleanedResponse.startsWith('```')) {
                     cleanedResponse = cleanedResponse.replace(/^```(?:json)?\n?/, '').replace(/```\s*$/, '');
                 }
 
-                try {
-                    return JSON.parse(cleanedResponse);
-                } catch (e) {
-                    // Fallback: wytnij pierwszą tablicę JSON, gdy AI dodało komentarz wokół
-                    const first = cleanedResponse.indexOf('[');
-                    const last = cleanedResponse.lastIndexOf(']');
-                    if (first !== -1 && last > first) {
-                        return JSON.parse(cleanedResponse.slice(first, last + 1));
+                let items = null;
+                if (!truncated) {
+                    try {
+                        items = JSON.parse(cleanedResponse);
+                    } catch (e) {
+                        // Fallback: wytnij pierwszą tablicę JSON, gdy AI dodało komentarz wokół
+                        const first = cleanedResponse.indexOf('[');
+                        const last = cleanedResponse.lastIndexOf(']');
+                        if (first !== -1 && last > first) {
+                            try { items = JSON.parse(cleanedResponse.slice(first, last + 1)); } catch (e2) {}
+                        }
                     }
-                    throw new Error('AI zwróciło odpowiedź w nieoczekiwanym formacie (to nie jest JSON)');
                 }
+                if (items === null) {
+                    items = this.salvageJSONArray(cleanedResponse);
+                    if (!truncated && items.length === 0) {
+                        throw new Error('AI zwróciło odpowiedź w nieoczekiwanym formacie (to nie jest JSON)');
+                    }
+                }
+                // Niektóre modele zwracają obiekt z tablicą w środku albo pojedynczy obiekt
+                if (!Array.isArray(items)) {
+                    const inner = items && typeof items === 'object' ? Object.values(items).find(Array.isArray) : null;
+                    items = inner || (items && typeof items === 'object' ? [items] : []);
+                }
+
+                return { items, truncated };
             }
 
-            displayAIResults(results, location) {
+            displayAIResults(results, location, warnings = []) {
                 if (!Array.isArray(results) || results.length === 0) {
                     this.showError('AI nie rozpoznało żadnych przedmiotów');
                     return;
                 }
 
                 // Add location to the locations list if it doesn't exist
-                if (!locations.includes(location)) {
-                    locations.push(location);
-                    this.saveLocationsToStorage();
-                    this.loadFilterOptions();
-                    console.log(`📍 Auto-dodano nową lokalizację: ${location}`);
-                }
+                this.registerLocation(location);
+                this.loadFilterOptions();
+
+                const building = this.inferBuilding(location);
 
                 // Normalizuj dane z AI - model potrafi zwrócić braki, liczby jako teksty
                 // albo przecinki dziesiętne; bez tego w bazie lądowały "undefined"
                 pendingAIItems = results
                     .filter(item => item && String(item.Przedmiot || '').trim())
-                    .map(item => ({
-                        Przedmiot: String(item.Przedmiot || '').trim(),
-                        Producent: String(item.Producent || '').trim(),
-                        Numer_katalogowy: String(item.Numer_katalogowy || '').trim(),
-                        Numery_zamienne: String(item.Numery_zamienne || '').trim(),
-                        Kategoria: String(item.Kategoria || '').trim(),
-                        Ilosc: parseFloat(String(item.Ilosc === undefined || item.Ilosc === null ? 1 : item.Ilosc).replace(',', '.')) || 1,
-                        Jednostka: String(item.Jednostka || 'szt').trim() || 'szt',
-                        Cena_PLN: parseFloat(String(item.Cena_PLN === undefined || item.Cena_PLN === null ? 0 : item.Cena_PLN).replace(',', '.')) || 0,
-                        Notatki: String(item.Notatki || '').trim(),
-                        Budynek: 'Sklep',
-                        Lokalizacja: location,
-                        Data_dodania: new Date().toISOString().split('T')[0],
-                        Status: 'aktywny'
-                    }));
+                    .map(item => {
+                        const unit = String(item.Jednostka || 'szt').trim().toLowerCase() || 'szt';
+                        return {
+                            Przedmiot: String(item.Przedmiot || '').trim(),
+                            Producent: String(item.Producent || '').trim(),
+                            Numer_katalogowy: String(item.Numer_katalogowy || '').trim(),
+                            Numery_zamienne: String(item.Numery_zamienne || '').trim(),
+                            Kategoria: String(item.Kategoria || '').trim(),
+                            Ilosc: parseFloat(String(item.Ilosc === undefined || item.Ilosc === null ? 1 : item.Ilosc).replace(',', '.')) || 1,
+                            // Jedna pisownia jednostek ("szt." → "szt", "kpl." → "komplet" itd.)
+                            Jednostka: UNIT_ALIASES[unit] || unit,
+                            Cena_PLN: parseFloat(String(item.Cena_PLN === undefined || item.Cena_PLN === null ? 0 : item.Cena_PLN).replace(',', '.')) || 0,
+                            Notatki: String(item.Notatki || '').trim(),
+                            Budynek: building,
+                            Lokalizacja: location,
+                            Data_dodania: todayLocal(),
+                            Status: 'aktywny'
+                        };
+                    });
 
                 if (pendingAIItems.length === 0) {
                     this.showError('AI nie zwróciło żadnego przedmiotu z nazwą - popraw tekst i spróbuj ponownie');
                     return;
                 }
 
-                const resultsHTML = pendingAIItems.map((item, index) => `
+                // Ostrzeżenia zostają na ekranie obok wyników (powiadomienie znikało po 5 s)
+                const warningsBox = document.getElementById('aiWarnings');
+                warningsBox.innerHTML = warnings.map(w => `<div class="mb-1">⚠ ${escapeHtml(w)}</div>`).join('');
+                warningsBox.style.display = warnings.length > 0 ? 'block' : 'none';
+
+                const resultsHTML = pendingAIItems.map((item) => {
+                    const duplicate = this.findDuplicate(item);
+                    return `
                     <div class="border border-gray-200 rounded p-3 mb-2">
                         <div class="font-semibold text-green-700">${escapeHtml(item.Przedmiot)}</div>
                         <div class="text-sm text-gray-600 grid grid-cols-2 gap-2 mt-1">
@@ -2366,9 +2928,10 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                             <div><strong>Kategoria:</strong> ${escapeHtml(item.Kategoria || '-')}</div>
                             <div><strong>Lokalizacja:</strong> ${escapeHtml(item.Lokalizacja)}</div>
                             ${item.Notatki ? `<div class="col-span-2"><strong>Notatki:</strong> ${escapeHtml(item.Notatki)}</div>` : ''}
+                            ${duplicate ? `<div class="col-span-2 text-orange-600">⚠ Już jest w bazie: ID ${escapeHtml(duplicate.ID)}, ilość ${escapeHtml(duplicate.Ilosc || 0)} ${escapeHtml(duplicate.Jednostka || 'szt')} – przy zapisie zapytam, czy zwiększyć ilość</div>` : ''}
                         </div>
-                    </div>
-                `).join('');
+                    </div>`;
+                }).join('');
 
                 document.getElementById('aiResultsList').innerHTML = resultsHTML;
                 document.getElementById('aiResults').style.display = 'block';
@@ -2380,21 +2943,32 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                     return;
                 }
 
+                const duplicateCount = pendingAIItems.filter(item => this.findDuplicate(item)).length;
+                const mergeDuplicates = duplicateCount > 0 && confirm(`${duplicateCount} z ${pendingAIItems.length} pozycji jest już w bazie (ten sam numer katalogowy, producent i lokalizacja).\n\nOK – zwiększ ilość istniejących pozycji\nAnuluj – dodaj wszystkie jako nowe, osobne pozycje`);
+
                 let nextId = this.getMaxId();
+                let added = 0;
+                let merged = 0;
 
                 pendingAIItems.forEach((item) => {
-                    currentData.push({
-                        ...item,
-                        ID: ++nextId
-                    });
+                    const duplicate = mergeDuplicates ? this.findDuplicate(item) : null;
+                    if (duplicate) {
+                        duplicate.Ilosc = roundQty((parseFloat(duplicate.Ilosc) || 0) + item.Ilosc);
+                        markItem(duplicate.ID, 'mod', true);
+                        merged++;
+                    } else {
+                        const record = { ...item, ID: ++nextId };
+                        currentData.push(record);
+                        markItem(record.ID, 'new', true);
+                        added++;
+                    }
                 });
+                savePending();
 
                 this.saveToLocalStorage();
-                this.displayInventoryTable();
-                this.updateStats();
-                this.loadFilterOptions();
+                this.refreshAll();
 
-                this.showSuccess(`Dodano ${pendingAIItems.length} przedmiotów przez AI`);
+                this.showSuccess(`Dodano ${added} przedmiotów przez AI${merged > 0 ? `, zwiększono ilość ${merged} istniejących` : ''}`);
                 this.closeVoiceModal();
             }
 
@@ -2408,192 +2982,241 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 document.getElementById('importPreview').style.display = 'none';
             }
 
-            previewCSV() {
+            // Wczytuje plik CSV i zwraca wynik analizy (patrz analyzeCSV)
+            readCSVFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            resolve(this.analyzeCSV(this.decodeCSV(e.target.result)));
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.onerror = () => reject(new Error('Nie udało się odczytać pliku'));
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+
+            // Excel zapisuje CSV w kodowaniu Windows-1250, program w UTF-8 – rozpoznaj oba,
+            // żeby polskie znaki nie zamieniały się w krzaczki
+            decodeCSV(buffer) {
+                try {
+                    return { text: new TextDecoder('utf-8', { fatal: true }).decode(buffer), encoding: 'UTF-8' };
+                } catch (e) {
+                    return { text: new TextDecoder('windows-1250').decode(buffer), encoding: 'Windows-1250 (Excel)' };
+                }
+            }
+
+            // Sprawdza plik przed importem: separator (przecinek / średnik / tabulator),
+            // nagłówki i każdy wiersz. Niczego nie zmienia w bazie.
+            analyzeCSV(decoded) {
+                const text = decoded.text.replace(/^﻿/, '');
+                const firstLine = text.split(/\r?\n/)[0] || '';
+                const delimiter = [',', ';', '\t']
+                    .map(d => [d, firstLine.split(d).length])
+                    .sort((a, b) => b[1] - a[1])[0][0];
+
+                const rows = this.parseCSV(text, delimiter);
+                if (rows.length < 2) {
+                    throw new Error('Plik CSV musi zawierać nagłówki i co najmniej jeden wiersz danych');
+                }
+
+                // Nagłówki bez względu na wielkość liter, z kilkoma typowymi odpowiednikami
+                const canonical = {};
+                KNOWN_COLUMNS.forEach(h => { canonical[normText(h)] = h; });
+                Object.assign(canonical, {
+                    'nazwa': 'Przedmiot', 'ilosc': 'Ilosc', 'cena': 'Cena_PLN', 'cena pln': 'Cena_PLN',
+                    'numer katalogowy': 'Numer_katalogowy', 'nr kat.': 'Numer_katalogowy',
+                    'numery zamienne': 'Numery_zamienne', 'data dodania': 'Data_dodania'
+                });
+                const headers = rows[0].map(h => canonical[normText(h.trim())] || h.trim());
+
+                if (!headers.includes('Przedmiot')) {
+                    throw new Error(`W pliku nie ma kolumny „Przedmiot” – to nie wygląda na plik z tego programu. Znalezione kolumny: ${headers.join(', ').slice(0, 300)}. Import przerwany, dane nie zostały zmienione.`);
+                }
+
+                const items = [];
+                const problems = [];
+
+                for (let i = 1; i < rows.length; i++) {
+                    let values = rows[i];
+                    // Nadmiarowe puste pola na końcu wiersza (Excel) nie są błędem
+                    while (values.length > headers.length && String(values[values.length - 1]).trim() === '') {
+                        values = values.slice(0, -1);
+                    }
+                    if (values.length !== headers.length) {
+                        problems.push({
+                            row: i + 1,
+                            reason: `ma ${values.length} pól zamiast ${headers.length}`,
+                            text: values.join(delimiter)
+                        });
+                        continue;
+                    }
+
+                    const item = {};
+                    KNOWN_COLUMNS.forEach(h => { item[h] = ''; });
+                    headers.forEach((header, index) => {
+                        if (!KNOWN_COLUMNS.includes(header)) return;
+                        let value = String(values[index]).trim();
+
+                        if (header === 'ID') {
+                            value = parseInt(value) || 0;
+                        } else if (header === 'Ilosc') {
+                            // parseFloat zamiast parseInt - jednostki kg/l/m mają ilości dziesiętne
+                            value = parseFloat(value.replace(',', '.')) || 0;
+                        } else if (header === 'Cena_PLN') {
+                            value = this.parsePrice(value);
+                        }
+
+                        item[header] = value;
+                    });
+                    item.ID = item.ID || 0;
+                    item.Ilosc = item.Ilosc || 0;
+                    item.Cena_PLN = item.Cena_PLN || 0;
+
+                    if (!item.Przedmiot) {
+                        problems.push({ row: i + 1, reason: 'nie ma nazwy przedmiotu', text: values.join(delimiter) });
+                        continue;
+                    }
+                    if (!item.Status) item.Status = 'aktywny';
+                    if (!item.Jednostka) item.Jednostka = 'szt';
+                    if (!item.Data_dodania) item.Data_dodania = todayLocal();
+
+                    items.push(item);
+                }
+
+                return {
+                    items,
+                    problems,
+                    headers,
+                    encoding: decoded.encoding,
+                    delimiter: delimiter === '\t' ? 'tabulator' : delimiter === ';' ? 'średnik' : 'przecinek',
+                    missing: KNOWN_COLUMNS.filter(h => !headers.includes(h)),
+                    ignored: headers.filter(h => h && !KNOWN_COLUMNS.includes(h))
+                };
+            }
+
+            async previewCSV() {
                 const fileInput = document.getElementById('csvFileInput');
                 if (!fileInput.files[0]) return;
 
                 const file = fileInput.files[0];
-                const reader = new FileReader();
+                const stats = document.getElementById('importStats');
+                document.getElementById('importPreview').style.display = 'block';
 
-                reader.onload = (e) => {
-                    try {
-                        const csv = e.target.result;
-                        const rows = this.parseCSV(csv);
+                let analysis;
+                try {
+                    analysis = await this.readCSVFile(file);
+                } catch (error) {
+                    console.error('Preview error:', error);
+                    stats.innerHTML = `<div class="text-red-700"><strong>Tego pliku nie da się zaimportować:</strong><br>${escapeHtml(error.message)}</div>`;
+                    return;
+                }
 
-                        if (rows.length === 0) {
-                            this.showError('Plik CSV jest pusty');
-                            return;
-                        }
+                const totalValue = analysis.items.filter(item => isActiveItem(item))
+                    .reduce((sum, item) => sum + item.Cena_PLN * item.Ilosc, 0);
 
-                        const headers = rows[0].map(h => h.trim());
-                        const dataRows = rows.slice(1);
+                const problemsHtml = analysis.problems.length === 0 ? '' : `
+                    <div class="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700">
+                        <strong>Wiersze z błędami – NIE zostaną zaimportowane (${analysis.problems.length}):</strong>
+                        ${analysis.problems.slice(0, 20).map(p =>
+                            `<div class="mt-1">Wiersz ${p.row} ${escapeHtml(p.reason)}: <span class="font-mono text-xs">${escapeHtml(p.text.slice(0, 160))}</span></div>`
+                        ).join('')}
+                        ${analysis.problems.length > 20 ? `<div class="mt-1">...i ${analysis.problems.length - 20} kolejnych</div>` : ''}
+                        <div class="mt-1">Popraw te wiersze w pliku (zwykle brakuje w nich przecinka albo pole z przecinkiem nie jest w cudzysłowie) i wybierz plik ponownie.</div>
+                    </div>`;
 
-                        let totalValue = 0;
-                        let validRows = 0;
-
-                        for (let i = 0; i < Math.min(dataRows.length, 10); i++) {
-                            const values = dataRows[i];
-                            if (values.length === headers.length) {
-                                validRows++;
-                                const priceIndex = headers.indexOf('Cena_PLN');
-                                const quantityIndex = headers.indexOf('Ilosc');
-                                if (priceIndex >= 0 && quantityIndex >= 0) {
-                                    const price = this.parsePrice(values[priceIndex]);
-                                    const quantity = parseFloat(String(values[quantityIndex]).replace(',', '.')) || 0;
-                                    totalValue += price * quantity;
-                                }
-                            }
-                        }
-
-                        document.getElementById('importStats').innerHTML = `
-                            <strong>Podgląd pliku:</strong><br>
-                            Nazwa: ${escapeHtml(file.name)}<br>
-                            Rozmiar: ${(file.size / 1024).toFixed(1)} KB<br>
-                            Wierszy: ${dataRows.length}<br>
-                            Kolumn: ${headers.length}<br>
-                            Przykładowa wartość (10 pierwszych): ${totalValue.toFixed(2)} PLN<br>
-                            <small>Kolumny: ${escapeHtml(headers.join(', '))}</small>
-                        `;
-
-                        document.getElementById('importPreview').style.display = 'block';
-
-                    } catch (error) {
-                        console.error('Preview error:', error);
-                        this.showError('Błąd podglądu CSV: ' + error.message);
-                    }
-                };
-
-                reader.readAsText(file, 'UTF-8');
+                stats.innerHTML = `
+                    <strong>Podgląd pliku:</strong><br>
+                    Nazwa: ${escapeHtml(file.name)}<br>
+                    Rozmiar: ${(file.size / 1024).toFixed(1)} KB (kodowanie: ${analysis.encoding}, separator: ${analysis.delimiter})<br>
+                    Poprawnych pozycji: ${analysis.items.length}<br>
+                    Wartość aktywnych pozycji: ${totalValue.toFixed(2)} PLN<br>
+                    <small>Kolumny: ${escapeHtml(analysis.headers.join(', '))}</small>
+                    ${analysis.missing.length > 0 ? `<br><small class="text-orange-600">Brak kolumn (zostaną puste): ${escapeHtml(analysis.missing.join(', '))}</small>` : ''}
+                    ${analysis.ignored.length > 0 ? `<br><small class="text-orange-600">Nieznane kolumny (pominięte): ${escapeHtml(analysis.ignored.join(', '))}</small>` : ''}
+                    ${problemsHtml}
+                `;
             }
 
-            processCSVImport() {
+            async processCSVImport() {
                 const fileInput = document.getElementById('csvFileInput');
                 const importMode = document.getElementById('importMode').value;
-                
+
                 if (!fileInput.files[0]) {
                     this.showError('Wybierz plik CSV');
                     return;
                 }
 
-                const file = fileInput.files[0];
-                const reader = new FileReader();
+                let analysis;
+                try {
+                    analysis = await this.readCSVFile(fileInput.files[0]);
+                } catch (error) {
+                    console.error('❌ Błąd importu CSV:', error);
+                    this.showError('Błąd importu CSV: ' + error.message);
+                    return;
+                }
 
-                reader.onload = (e) => {
-                    try {
-                        console.log('🔄 V10 CSV Import rozpoczęty');
-                        const csv = e.target.result;
-                        const rows = this.parseCSV(csv);
+                const data = analysis.items;
+                if (data.length === 0) {
+                    this.showError('W pliku nie ma ani jednej poprawnej pozycji – nic nie zaimportowano');
+                    return;
+                }
 
-                        if (rows.length < 2) {
-                            this.showError('Plik CSV musi zawierać nagłówki i co najmniej jeden wiersz danych');
+                if (analysis.problems.length > 0 &&
+                    !confirm(`${analysis.problems.length} wierszy ma błędy i NIE zostanie zaimportowanych (lista jest w podglądzie).\n\nImportować pozostałe ${data.length} pozycji?`)) {
+                    return;
+                }
+
+                if (importMode === 'replace') {
+                    if (currentData.length > 0) {
+                        if (!confirm(`Tryb „Zastąp”: obecna baza (${currentData.length} pozycji) zostanie zastąpiona ${data.length} pozycjami z pliku – także w chmurze i na innych urządzeniach.\n\nPrzed zamianą automatycznie pobiorę kopię obecnej bazy.\n\nKontynuować?`)) {
                             return;
                         }
-
-                        const headers = rows[0].map(h => h.trim());
-                        const data = [];
-                        let skippedRows = 0;
-                        const importedLocations = new Set();
-
-                        console.log('📋 Nagłówki CSV:', headers);
-
-                        for (let i = 1; i < rows.length; i++) {
-                            const values = rows[i];
-                            if (values.length !== headers.length) {
-                                skippedRows++;
-                                continue;
-                            }
-
-                            const item = {};
-                            headers.forEach((header, index) => {
-                                let value = String(values[index]).trim();
-
-                                if (header === 'ID') {
-                                    value = parseInt(value) || 0;
-                                } else if (header === 'Ilosc') {
-                                    // parseFloat zamiast parseInt - jednostki kg/l/m mają ilości dziesiętne
-                                    value = parseFloat(value.replace(',', '.')) || 0;
-                                } else if (header === 'Cena_PLN') {
-                                    value = this.parsePrice(value);
-                                }
-
-                                item[header] = value;
-                            });
-
-                            // Collect locations
-                            if (item.Lokalizacja && item.Lokalizacja.trim()) {
-                                importedLocations.add(item.Lokalizacja.trim());
-                            }
-
-                            data.push(item);
-                        }
-
-                        console.log(`📊 Zaimportowano ${data.length} przedmiotów, pominięto ${skippedRows} wierszy`);
-
-                        // Update locations
-                        importedLocations.forEach(location => {
-                            if (!locations.includes(location)) {
-                                locations.push(location);
-                                console.log(`📍 Auto-dodano lokalizację z CSV: ${location}`);
-                            }
-                        });
-
-                        const totalValue = data.filter(item => item.Status === 'aktywny')
-                            .reduce((sum, item) => {
-                                const price = parseFloat(item.Cena_PLN) || 0;
-                                const quantity = parseFloat(item.Ilosc) || 0;
-                                return sum + (price * quantity);
-                            }, 0);
-
-                        console.log(`💰 Obliczona wartość importu: ${totalValue.toFixed(2)} PLN`);
-
-                        if (importMode === 'replace') {
-                            // Zachowaj ID z CSV, ale brakujące lub zduplikowane nadaj od nowa -
-                            // CSV bez kolumny ID psuł wcześniej przyciski Edytuj/Usuń (ID=undefined)
-                            const usedIds = new Set();
-                            let maxSeen = 0;
-                            data.forEach(item => {
-                                const idNum = Number(item.ID) || 0;
-                                if (idNum > 0 && !usedIds.has(idNum)) {
-                                    item.ID = idNum;
-                                    usedIds.add(idNum);
-                                    if (idNum > maxSeen) maxSeen = idNum;
-                                } else {
-                                    item.ID = null;
-                                }
-                            });
-                            data.forEach(item => {
-                                if (item.ID === null) item.ID = ++maxSeen;
-                            });
-                            currentData = data;
-                            console.log('🔄 Zastąpiono wszystkie dane');
-                        } else {
-                            let nextId = this.getMaxId();
-                            data.forEach(item => {
-                                item.ID = ++nextId;
-                                currentData.push(item);
-                            });
-                            console.log('➕ Dodano do istniejących danych');
-                        }
-
-                        this.clearSearch();
-
-                        this.saveToLocalStorage();
-                        this.saveLocationsToStorage();
-                        this.displayInventoryTable();
-                        this.updateStats();
-                        this.loadFilterOptions();
-                        this.showDebugInfo();
-
-                        this.showSuccess(`✅ Zaimportowano ${data.length} przedmiotów i ${importedLocations.size} lokalizacji.${skippedRows > 0 ? ` Pominięto wierszy: ${skippedRows}.` : ''} Wartość: ${totalValue.toFixed(2)} PLN`);
-                        this.closeImportModal();
-
-                    } catch (error) {
-                        console.error('❌ Błąd importu CSV:', error);
-                        this.showError('Błąd parsowania CSV: ' + error.message);
+                        this.downloadCSV(`magazyn_przed_importem_${todayLocal()}.csv`);
                     }
-                };
 
-                reader.readAsText(file, 'UTF-8');
+                    // Zachowaj ID z CSV, ale brakujące lub zduplikowane nadaj od nowa
+                    const usedIds = new Set();
+                    let maxSeen = 0;
+                    data.forEach(item => {
+                        const idNum = Number(item.ID) || 0;
+                        if (idNum > 0 && !usedIds.has(idNum)) {
+                            item.ID = idNum;
+                            usedIds.add(idNum);
+                            if (idNum > maxSeen) maxSeen = idNum;
+                        } else {
+                            item.ID = null;
+                        }
+                    });
+                    data.forEach(item => {
+                        if (item.ID === null) item.ID = ++maxSeen;
+                    });
+                    currentData = data;
+                    markFull();
+                } else {
+                    let nextId = this.getMaxId();
+                    data.forEach(item => {
+                        item.ID = ++nextId;
+                        currentData.push(item);
+                        markItem(item.ID, 'new', true);
+                    });
+                    savePending();
+                }
+
+                const importedLocations = [...new Set(data.map(item => item.Lokalizacja).filter(Boolean))];
+                importedLocations.forEach(location => this.registerLocation(location));
+
+                const totalValue = data.filter(item => isActiveItem(item))
+                    .reduce((sum, item) => sum + item.Cena_PLN * item.Ilosc, 0);
+
+                this.saveToLocalStorage();
+                this.clearSearch();
+                this.refreshAll();
+
+                this.showSuccess(`✅ Zaimportowano ${data.length} przedmiotów i ${importedLocations.length} lokalizacji.${analysis.problems.length > 0 ? ` Pominięto wierszy z błędami: ${analysis.problems.length}.` : ''} Wartość: ${totalValue.toFixed(2)} PLN`);
+                this.closeImportModal();
             }
 
             parsePrice(value) {
@@ -2621,7 +3244,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
             // z przecinkami, podwojonymi cudzysłowami ("") i NOWYMI LINIAMI w środku.
             // Wcześniejsze dzielenie pliku po \n gubiło wiersze z wielolinijkowymi
             // notatkami, które eksport CSV poprawnie zapisywał.
-            parseCSV(text) {
+            parseCSV(text, delimiter = ',') {
                 const rows = [];
                 let row = [];
                 let field = '';
@@ -2639,7 +3262,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                         }
                     } else if (c === '"') {
                         inQuotes = true;
-                    } else if (c === ',') {
+                    } else if (c === delimiter) {
                         row.push(field);
                         field = '';
                     } else if (c === '\n' || c === '\r') {
@@ -2662,26 +3285,37 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 return rows;
             }
 
-            parseCSVLine(line) {
-                const result = [];
-                let current = '';
-                let inQuotes = false;
-                
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        result.push(current);
-                        current = '';
-                    } else {
-                        current += char;
-                    }
-                }
-                
-                result.push(current);
-                return result;
+            buildCSV() {
+                const csvRows = currentData.map(item =>
+                    KNOWN_COLUMNS.map(header => {
+                        const value = item[header] !== undefined && item[header] !== null ? item[header] : '';
+                        const strValue = String(value);
+                        // Zawijamy w cudzysłów jeśli zawiera separator, cudzysłów, nową linię
+                        // albo spację na brzegu
+                        if (/[",;\r\n]/.test(strValue) || strValue !== strValue.trim()) {
+                            return '"' + strValue.replace(/"/g, '""') + '"';
+                        }
+                        return strValue;
+                    }).join(',')
+                );
+                return [KNOWN_COLUMNS.join(','), ...csvRows].join('\n');
+            }
+
+            downloadCSV(filename) {
+                // BOM (﻿) - wymagany aby Excel poprawnie odczytał polskie znaki UTF-8
+                const blob = new Blob(['﻿' + this.buildCSV()], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                // Zwolnij pamięć z opóźnieniem – natychmiastowe zwolnienie potrafi przerwać pobieranie
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
             }
 
             exportCSV() {
@@ -2690,113 +3324,54 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                     return;
                 }
 
-                const headers = ['ID', 'Budynek', 'Lokalizacja', 'Kategoria', 'Przedmiot', 'Producent', 
-                               'Numer_katalogowy', 'Numery_zamienne', 'Ilosc', 'Jednostka', 'Cena_PLN', 
-                               'Data_dodania', 'Status', 'Notatki'];
-                
-                const csvRows = currentData.map(item => 
-                    headers.map(header => {
-                        const value = item[header] !== undefined && item[header] !== null ? item[header] : '';
-                        const strValue = String(value);
-                        // Zawijamy w cudzysłów jeśli zawiera przecinek, cudzysłów lub nową linię
-                        if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
-                            return '"' + strValue.replace(/"/g, '""') + '"';
-                        }
-                        return strValue;
-                    }).join(',')
-                );
-
-                const csvContent = [headers.join(','), ...csvRows].join('\n');
-
-                // BOM (\uFEFF) - wymagany aby Excel poprawnie odczytał polskie znaki UTF-8
-                const bom = '\uFEFF';
-                const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement('a');
-                const url = URL.createObjectURL(blob);
-                
-                link.setAttribute('href', url);
-                const dateStr = new Date().toISOString().split('T')[0];
-                link.setAttribute('download', `magazyn_backup_${dateStr}.csv`);
-                link.style.visibility = 'hidden';
-                
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url); // Zwolnij pamięć
-                
+                this.downloadCSV(`magazyn_backup_${todayLocal()}.csv`);
                 this.showSuccess(`Plik CSV pobrany (${currentData.length} pozycji)`);
             }
 
-            editField(id, field) {
-                // Stara metoda inline - zachowana dla kompatybilności, ale już nie używana
-                this.editItem(id);
-            }
-
-            saveField(id, field, newValue) {
-                const item = currentData.find(item => item.ID === id);
-                if (item) {
-                    item[field] = newValue;
-                    this.saveToLocalStorage();
-                    this.displayInventoryTable();
-                    this.updateStats();
-                    console.log(`✏️ Zaktualizowano ${field} dla ID ${id}: ${newValue}`);
-                }
-            }
-
             editItem(id) {
-                const item = currentData.find(item => item.ID === id);
+                const item = this.findItem(id);
                 if (!item) {
                     this.showError('Nie znaleziono przedmiotu o ID: ' + id);
                     return;
                 }
 
                 // Wypełnij pola modalu
-                document.getElementById('editItemId').value = id;
+                document.getElementById('editItemId').value = item.ID;
                 document.getElementById('editPrzedmiot').value = item.Przedmiot || '';
                 document.getElementById('editProducent').value = item.Producent || '';
                 document.getElementById('editNumerKat').value = item.Numer_katalogowy || '';
                 document.getElementById('editNumeryZamienne').value = item.Numery_zamienne || '';
                 document.getElementById('editKategoria').value = item.Kategoria || '';
+                document.getElementById('editBudynek').value = item.Budynek || '';
                 document.getElementById('editIlosc').value = item.Ilosc || 0;
                 document.getElementById('editCena').value = item.Cena_PLN || 0;
                 document.getElementById('editNotatki').value = item.Notatki || '';
 
-                // Ustaw jednostkę
+                // Jednostka, status i lokalizacja: jeśli wartości przedmiotu nie ma na liście
+                // wyboru, zostaje do niej dopisana – inaczej zapis edycji by ją skasował
                 const jednostkaSelect = document.getElementById('editJednostka');
                 const currentJednostka = item.Jednostka || 'szt';
-                // Sprawdź czy wartość istnieje w opcjach, jeśli nie - dodaj
-                let optExists = Array.from(jednostkaSelect.options).some(o => o.value === currentJednostka);
-                if (!optExists) {
-                    const opt = document.createElement('option');
-                    opt.value = currentJednostka;
-                    opt.textContent = currentJednostka;
-                    jednostkaSelect.appendChild(opt);
-                }
+                this.ensureOption(jednostkaSelect, currentJednostka);
                 jednostkaSelect.value = currentJednostka;
 
-                // Ustaw status
-                document.getElementById('editStatus').value = item.Status || 'aktywny';
+                const statusSelect = document.getElementById('editStatus');
+                const currentStatus = item.Status || 'aktywny';
+                this.ensureOption(statusSelect, currentStatus);
+                statusSelect.value = currentStatus;
 
-                // Wypełnij dropdown lokalizacji
                 const lokSelect = document.getElementById('editLokalizacja');
                 lokSelect.innerHTML = '<option value="">Brak lokalizacji</option>';
-                locations.forEach(loc => {
-                    const opt = document.createElement('option');
-                    opt.value = loc;
-                    opt.textContent = loc;
-                    lokSelect.appendChild(opt);
-                });
+                this.allLocations().forEach(loc => this.ensureOption(lokSelect, loc));
+                this.ensureOption(lokSelect, item.Lokalizacja);
                 lokSelect.value = item.Lokalizacja || '';
 
                 // Otwórz modal
                 document.getElementById('editModal').style.display = 'block';
                 document.getElementById('editPrzedmiot').focus();
-                console.log(`✏️ Otwarto edycję dla ID ${id}: ${item.Przedmiot}`);
             }
 
             saveEditItem() {
-                const id = parseInt(document.getElementById('editItemId').value);
-                const item = currentData.find(item => item.ID === id);
+                const item = this.findItem(document.getElementById('editItemId').value);
                 if (!item) {
                     this.showError('Błąd: nie znaleziono przedmiotu');
                     return;
@@ -2815,6 +3390,7 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 item.Numer_katalogowy = document.getElementById('editNumerKat').value.trim();
                 item.Numery_zamienne = document.getElementById('editNumeryZamienne').value.trim();
                 item.Kategoria = document.getElementById('editKategoria').value.trim();
+                item.Budynek = document.getElementById('editBudynek').value.trim();
                 item.Ilosc = parseFloat(document.getElementById('editIlosc').value) || 0;
                 item.Jednostka = document.getElementById('editJednostka').value;
                 item.Cena_PLN = parseFloat(document.getElementById('editCena').value) || 0;
@@ -2822,62 +3398,70 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 item.Status = document.getElementById('editStatus').value;
                 item.Notatki = document.getElementById('editNotatki').value.trim();
 
+                markItem(item.ID, 'mod');
                 this.saveToLocalStorage();
-                this.displayInventoryTable();
-                this.updateStats();
-                this.loadFilterOptions();
+                this.refreshAll();
 
                 document.getElementById('editModal').style.display = 'none';
                 this.showSuccess(`Zapisano zmiany dla: ${item.Przedmiot}`);
-                console.log(`✅ Zaktualizowano przedmiot ID ${id}:`, item);
             }
 
+            // Usuń (oznacz jako usunięty) albo przywróć
             deleteItem(id) {
-                const item = currentData.find(item => item.ID === id);
+                const item = this.findItem(id);
                 if (!item) return;
 
-                if (item.Status === 'usunięty') {
-                    // Przywróć jeśli już usunięty
+                const restoring = item.Status === 'usunięty';
+                if (restoring) {
                     if (!confirm(`Przywrócić przedmiot "${item.Przedmiot}" do stanu aktywnego?`)) return;
                     item.Status = 'aktywny';
-                    this.saveToLocalStorage();
-                    if (isSearchActive) {
-                        const fi = filteredData.findIndex(f => f.ID === id);
-                        if (fi >= 0) filteredData[fi].Status = 'aktywny';
-                    }
-                    this.displayInventoryTable();
-                    this.updateStats();
-                    this.showSuccess(`Przywrócono: ${item.Przedmiot}`);
-                    console.log(`♻️ Przywrócono przedmiot ID ${id}: ${item.Przedmiot}`);
                 } else {
                     if (!confirm(`Usunąć przedmiot "${item.Przedmiot}"?\n\nPrzedmiot zostanie oznaczony jako usunięty (można przywrócić).`)) return;
                     item.Status = 'usunięty';
-                    this.saveToLocalStorage();
-                    if (isSearchActive) {
-                        const fi = filteredData.findIndex(f => f.ID === id);
-                        if (fi >= 0) filteredData[fi].Status = 'usunięty';
-                    }
-                    this.displayInventoryTable();
-                    this.updateStats();
-                    this.showSuccess(`Usunięto: ${item.Przedmiot} (można przywrócić)`);
-                    console.log(`🗑️ Usunięto przedmiot ID ${id}: ${item.Przedmiot}`);
                 }
+
+                markItem(item.ID, 'mod');
+                this.saveToLocalStorage();
+                this.refreshAll();
+                this.showSuccess(restoring ? `Przywrócono: ${item.Przedmiot}` : `Usunięto: ${item.Przedmiot} (można przywrócić)`);
+            }
+
+            // Trwałe skasowanie pozycji oznaczonej wcześniej jako usunięta
+            purgeItem(id) {
+                const item = this.findItem(id);
+                if (!item || item.Status !== 'usunięty') return;
+                if (!confirm(`Usunąć TRWALE przedmiot "${item.Przedmiot}" (ID ${item.ID})?\n\nTej operacji nie da się cofnąć.`)) return;
+
+                currentData = currentData.filter(other => other !== item);
+                markItem(item.ID, 'del');
+                if (selectedSearchItemId !== null && String(selectedSearchItemId) === String(item.ID)) {
+                    this.clearSearch();
+                }
+                this.saveToLocalStorage();
+                this.refreshAll();
+                this.showSuccess(`Usunięto trwale: ${item.Przedmiot}`);
             }
 
             saveToLocalStorage() {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
-                console.log(`💾 Zapisano ${currentData.length} przedmiotów do localStorage (${STORAGE_KEY})`);
-                // Firebase sync (debounce 2s)
-                try { fbSaveInventory(); } catch(e) {}
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData));
+                } catch (e) {
+                    console.error('Błąd zapisu lokalnego:', e);
+                    this.showError('Nie udało się zapisać danych w pamięci przeglądarki (brak miejsca?). Zrób teraz Export CSV!');
+                }
+                // Wysyłka do chmury (2 s po ostatniej zmianie)
+                scheduleSync();
             }
 
             loadFromLocalStorage() {
-                const data = localStorage.getItem(STORAGE_KEY);
-                if (data) {
-                    currentData = JSON.parse(data);
-                    console.log(`📂 Załadowano ${currentData.length} przedmiotów z localStorage (${STORAGE_KEY})`);
-                } else {
-                    console.log('📂 Brak danych w localStorage dla V10');
+                try {
+                    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+                    if (Array.isArray(stored)) {
+                        currentData = stored.filter(Boolean);
+                        console.log(`📂 Załadowano ${currentData.length} przedmiotów z localStorage (${STORAGE_KEY})`);
+                    }
+                } catch (e) {
+                    console.error('Uszkodzone dane lokalne – czekam na dane z chmury:', e);
                 }
             }
 
@@ -2889,34 +3473,38 @@ Odpowiedz TYLKO JSON array, bez dodatkowych komentarzy.`;
                 this.showNotification(message, 'error');
             }
 
+            // Powiadomienia są nad oknami i ekranem logowania (wcześniej chowały się pod oknami,
+            // więc błędy w formularzach były na telefonie niewidoczne)
             showNotification(message, type) {
                 console.log(`${type === 'success' ? '✅' : '❌'} ${message}`);
-                
+
+                let box = document.getElementById('notificationBox');
+                if (!box) {
+                    box = document.createElement('div');
+                    box.id = 'notificationBox';
+                    box.style.cssText = 'position:fixed;top:16px;right:16px;z-index:20000;display:flex;flex-direction:column;' +
+                        'gap:8px;align-items:flex-end;max-width:min(420px,92vw);pointer-events:none;';
+                    document.body.appendChild(box);
+                }
+
                 const notification = document.createElement('div');
-                notification.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 ${
-                    type === 'success' ? 'bg-green-600' : 'bg-red-600'
-                }`;
+                notification.style.cssText = 'padding:14px 16px;border-radius:8px;color:white;box-shadow:0 4px 12px rgba(0,0,0,0.25);' +
+                    'background:' + (type === 'success' ? '#16a34a' : '#dc2626') + ';';
                 notification.textContent = message;
-                
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    if (document.body.contains(notification)) {
-                        document.body.removeChild(notification);
-                    }
-                }, 5000);
+                box.appendChild(notification);
+
+                setTimeout(() => notification.remove(), type === 'success' ? 5000 : 8000);
             }
         }
 
         // Initialize app - V10 z systemem logowania
         let app;
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Inicjalizacja Inwentaryzacji Magazynu V10A - v4 (ręczne dodawanie + ustawienia AI)');
+            console.log('🚀 Inicjalizacja Inwentaryzacji Magazynu V11 - v4 (ręczne dodawanie + ustawienia AI)');
             
             // Sprawdź logowanie na początku - jeśli nie zalogowany, pokaże formularz
             checkLogin();
         });
     </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
